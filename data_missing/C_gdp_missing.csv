@@ -1,0 +1,603 @@
+Country,Year,0
+Australia,1950,1
+Australia,1951,1
+Australia,1952,1
+Australia,1953,1
+Australia,1954,1
+Australia,1955,1
+Australia,1956,1
+Australia,1957,1
+Australia,1958,1
+Australia,2018,1
+Austria,1959,1
+Austria,1960,1
+Austria,1961,1
+Austria,1962,1
+Austria,1963,1
+Austria,1964,1
+Austria,1965,1
+Austria,1966,1
+Austria,1967,1
+Austria,1968,1
+Austria,1969,1
+Belgium,1956,1
+Belgium,1957,1
+Belgium,1958,1
+Belgium,1959,1
+Belgium,1960,1
+Belgium,1961,1
+Belgium,1962,1
+Belgium,1963,1
+Belgium,1964,1
+Belgium,1965,1
+Belgium,1966,1
+Belgium,1967,1
+Belgium,1968,1
+Belgium,1969,1
+Brazil,1960,1
+Brazil,1961,1
+Brazil,1962,1
+Brazil,1963,1
+Brazil,1964,1
+Brazil,1965,1
+Brazil,1966,1
+Brazil,1967,1
+Brazil,1968,1
+Brazil,1969,1
+Brazil,1970,1
+Brazil,1971,1
+Brazil,1972,1
+Brazil,1973,1
+Brazil,1974,1
+Brazil,1975,1
+Brazil,1976,1
+Brazil,1977,1
+Brazil,1978,1
+Brazil,1979,1
+Brazil,1980,1
+Brazil,1981,1
+Brazil,1982,1
+Brazil,1983,1
+Brazil,1984,1
+Brazil,1985,1
+Brazil,1986,1
+Brazil,1987,1
+Brazil,1988,1
+Brazil,1989,1
+Brazil,1990,1
+Brazil,1991,1
+Brazil,1992,1
+Brazil,1993,1
+Brazil,1994,1
+Brazil,1995,1
+Brazil,1996,1
+Brazil,1997,1
+Brazil,1998,1
+Brazil,1999,1
+Brazil,2017,1
+Brazil,2018,1
+Canada,1950,1
+Canada,1951,1
+Canada,1952,1
+Canada,1953,1
+Canada,1954,1
+Canada,1955,1
+Canada,1956,1
+Canada,1957,1
+Canada,1958,1
+Canada,1959,1
+Canada,1960,1
+Canada,1961,1
+Canada,1962,1
+Canada,1963,1
+Canada,1964,1
+Canada,1965,1
+Canada,1966,1
+Canada,1967,1
+Canada,1968,1
+Canada,1969,1
+Canada,1970,1
+Canada,1971,1
+Canada,1972,1
+Canada,1973,1
+Canada,1974,1
+Canada,1975,1
+Canada,1976,1
+Canada,1977,1
+Canada,1978,1
+Canada,1979,1
+Canada,1980,1
+Canada,1981,1
+Canada,1982,1
+Canada,1983,1
+Canada,1984,1
+Canada,1985,1
+Canada,1986,1
+Canada,1987,1
+Canada,1988,1
+Canada,1989,1
+Canada,1990,1
+Canada,1991,1
+Canada,1992,1
+Canada,1993,1
+Canada,1994,1
+Canada,1995,1
+Canada,1996,1
+Chile,1960,1
+Chile,1961,1
+Chile,1962,1
+Chile,1963,1
+Chile,1964,1
+Chile,1965,1
+Chile,1966,1
+Chile,1967,1
+Chile,1968,1
+Chile,1969,1
+Chile,1970,1
+Chile,1971,1
+Chile,1972,1
+Chile,1973,1
+Chile,1974,1
+Chile,1975,1
+Chile,1976,1
+Chile,1977,1
+Chile,1978,1
+Chile,1979,1
+Chile,1980,1
+Chile,1981,1
+Chile,1982,1
+Chile,1983,1
+Chile,1984,1
+Chile,1985,1
+China (People's Republic of),2017,1
+China (People's Republic of),2018,1
+Czech Republic,1970,1
+Czech Republic,1971,1
+Czech Republic,1972,1
+Czech Republic,1973,1
+Czech Republic,1974,1
+Czech Republic,1975,1
+Czech Republic,1976,1
+Czech Republic,1977,1
+Czech Republic,1978,1
+Czech Republic,1979,1
+Czech Republic,1980,1
+Czech Republic,1981,1
+Czech Republic,1982,1
+Czech Republic,1983,1
+Czech Republic,1984,1
+Czech Republic,1985,1
+Czech Republic,1986,1
+Czech Republic,1987,1
+Czech Republic,1988,1
+Czech Republic,1989,1
+Estonia,1970,1
+Estonia,1971,1
+Estonia,1972,1
+Estonia,1973,1
+Estonia,1974,1
+Estonia,1975,1
+Estonia,1976,1
+Estonia,1977,1
+Estonia,1978,1
+Estonia,1979,1
+Estonia,1980,1
+Estonia,1981,1
+Estonia,1982,1
+Estonia,1983,1
+Estonia,1984,1
+Estonia,1985,1
+Estonia,1986,1
+Estonia,1987,1
+Estonia,1988,1
+Estonia,1989,1
+Estonia,1990,1
+Estonia,1991,1
+Estonia,1992,1
+Estonia,1993,1
+Estonia,1994,1
+Finland,1956,1
+Finland,1957,1
+Finland,1958,1
+Finland,1959,1
+Finland,1960,1
+Finland,1961,1
+Finland,1962,1
+Finland,1963,1
+Finland,1964,1
+Finland,1965,1
+Finland,1966,1
+Finland,1967,1
+Finland,1968,1
+Finland,1969,1
+Germany,1956,1
+Germany,1957,1
+Germany,1958,1
+Germany,1959,1
+Germany,1960,1
+Germany,1961,1
+Germany,1962,1
+Germany,1963,1
+Germany,1964,1
+Germany,1965,1
+Germany,1966,1
+Germany,1967,1
+Germany,1968,1
+Germany,1969,1
+Greece,1956,1
+Greece,1957,1
+Greece,1958,1
+Greece,1959,1
+Hungary,1981,1
+Hungary,1982,1
+Hungary,1983,1
+Hungary,1984,1
+Hungary,1985,1
+Hungary,1986,1
+Hungary,1987,1
+Hungary,1988,1
+Hungary,1989,1
+Hungary,1990,1
+Iceland,1956,1
+Iceland,1957,1
+Iceland,1958,1
+Iceland,1959,1
+Iceland,1960,1
+Iceland,1961,1
+Iceland,1962,1
+Iceland,1963,1
+Iceland,1964,1
+Iceland,1965,1
+Iceland,1966,1
+Iceland,1967,1
+Iceland,1968,1
+Iceland,1969,1
+Iceland,1970,1
+Iceland,1971,1
+Iceland,1972,1
+Iceland,1973,1
+Iceland,1974,1
+Iceland,1975,1
+Iceland,1976,1
+Iceland,1977,1
+Iceland,1978,1
+Iceland,1979,1
+Iceland,1980,1
+Iceland,1981,1
+Iceland,1982,1
+Iceland,1983,1
+Iceland,1984,1
+Iceland,1985,1
+Iceland,1986,1
+Iceland,1987,1
+Iceland,1988,1
+Iceland,1989,1
+Iceland,1990,1
+Iceland,1991,1
+Iceland,1992,1
+Iceland,1993,1
+Iceland,1994,1
+Iceland,1995,1
+Iceland,2017,1
+Iceland,2018,1
+India,2018,1
+Israel,1960,1
+Israel,1961,1
+Israel,1962,1
+Israel,1963,1
+Israel,1964,1
+Israel,1965,1
+Israel,1966,1
+Israel,1967,1
+Israel,1968,1
+Israel,1969,1
+Israel,1970,1
+Israel,1971,1
+Israel,1972,1
+Israel,1973,1
+Israel,1974,1
+Israel,1975,1
+Israel,1976,1
+Israel,1977,1
+Israel,1978,1
+Israel,1979,1
+Israel,1980,1
+Israel,1981,1
+Israel,1982,1
+Israel,1983,1
+Israel,1984,1
+Israel,1985,1
+Israel,1986,1
+Israel,1987,1
+Israel,1988,1
+Israel,1989,1
+Israel,1990,1
+Israel,1991,1
+Israel,1992,1
+Israel,1993,1
+Israel,1994,1
+Italy,1956,1
+Italy,1957,1
+Italy,1958,1
+Italy,1959,1
+Italy,1960,1
+Italy,1961,1
+Italy,1962,1
+Italy,1963,1
+Italy,1964,1
+Italy,1965,1
+Italy,1966,1
+Italy,1967,1
+Italy,1968,1
+Italy,1969,1
+Japan,1956,1
+Japan,1957,1
+Japan,1958,1
+Japan,1959,1
+Japan,1960,1
+Japan,1961,1
+Japan,1962,1
+Japan,1963,1
+Japan,1964,1
+Japan,1965,1
+Japan,1966,1
+Japan,1967,1
+Japan,1968,1
+Japan,1969,1
+Japan,2018,1
+Latvia,1982,1
+Latvia,1983,1
+Latvia,1984,1
+Latvia,1992,1
+Latvia,1993,1
+Latvia,1994,1
+Lithuania,1982,1
+Lithuania,1983,1
+Lithuania,1984,1
+Lithuania,1992,1
+Lithuania,1993,1
+Lithuania,1994,1
+Luxembourg,1956,1
+Luxembourg,1957,1
+Luxembourg,1958,1
+Luxembourg,1959,1
+Luxembourg,1960,1
+Luxembourg,1961,1
+Luxembourg,1962,1
+Luxembourg,1963,1
+Luxembourg,1964,1
+Luxembourg,1965,1
+Luxembourg,1966,1
+Luxembourg,1967,1
+Luxembourg,1968,1
+Luxembourg,1969,1
+Mexico,1960,1
+Mexico,1961,1
+Mexico,1962,1
+Mexico,1963,1
+Mexico,1964,1
+Mexico,1965,1
+Mexico,1966,1
+Mexico,1967,1
+Mexico,1968,1
+Mexico,1969,1
+Mexico,2018,1
+Netherlands,1961,1
+Netherlands,1962,1
+Netherlands,1963,1
+Netherlands,1964,1
+Netherlands,1965,1
+Netherlands,1966,1
+Netherlands,1967,1
+Netherlands,1968,1
+New Zealand,1950,1
+New Zealand,1951,1
+New Zealand,1952,1
+New Zealand,1953,1
+New Zealand,1954,1
+New Zealand,1955,1
+New Zealand,1956,1
+New Zealand,1957,1
+New Zealand,1958,1
+New Zealand,1959,1
+New Zealand,1960,1
+New Zealand,1961,1
+New Zealand,1962,1
+New Zealand,1963,1
+New Zealand,1964,1
+New Zealand,1965,1
+New Zealand,1966,1
+New Zealand,1967,1
+New Zealand,1968,1
+New Zealand,1969,1
+New Zealand,1970,1
+New Zealand,1971,1
+New Zealand,1972,1
+New Zealand,1973,1
+New Zealand,1974,1
+New Zealand,1975,1
+New Zealand,1976,1
+New Zealand,2018,1
+Norway,1956,1
+Norway,1957,1
+Norway,1958,1
+Norway,1959,1
+Norway,1960,1
+Norway,1961,1
+Norway,1962,1
+Norway,1963,1
+Norway,1964,1
+Norway,1965,1
+Norway,1966,1
+Norway,1967,1
+Norway,1968,1
+Norway,1969,1
+Poland,1976,1
+Poland,1977,1
+Poland,1978,1
+Poland,1979,1
+Poland,1980,1
+Poland,1981,1
+Poland,1982,1
+Poland,1983,1
+Poland,1984,1
+Poland,1985,1
+Poland,1986,1
+Poland,1987,1
+Poland,1988,1
+Poland,1989,1
+Portugal,1956,1
+Portugal,1957,1
+Portugal,1958,1
+Portugal,1959,1
+Portugal,1960,1
+Portugal,1961,1
+Portugal,1962,1
+Portugal,1963,1
+Portugal,1964,1
+Portugal,1965,1
+Portugal,1966,1
+Portugal,1967,1
+Portugal,1968,1
+Portugal,1969,1
+Russia,1970,1
+Russia,1971,1
+Russia,1972,1
+Russia,1973,1
+Russia,1974,1
+Russia,1975,1
+Russia,1976,1
+Russia,1977,1
+Russia,1978,1
+Russia,1979,1
+Russia,1980,1
+Russia,1981,1
+Russia,1982,1
+Russia,1983,1
+Russia,1984,1
+Russia,1985,1
+Russia,1986,1
+Russia,1987,1
+Russia,1988,1
+Russia,1989,1
+Russia,1990,1
+Russia,1991,1
+Russia,1992,1
+Russia,1993,1
+Russia,1994,1
+Slovak Republic,1970,1
+Slovak Republic,1971,1
+Slovak Republic,1972,1
+Slovak Republic,1973,1
+Slovak Republic,1974,1
+Slovak Republic,1975,1
+Slovak Republic,1976,1
+Slovak Republic,1977,1
+Slovak Republic,1978,1
+Slovak Republic,1979,1
+Slovak Republic,1980,1
+Slovak Republic,1981,1
+Slovak Republic,1982,1
+Slovak Republic,1983,1
+Slovak Republic,1984,1
+Slovak Republic,1985,1
+Slovak Republic,1986,1
+Slovak Republic,1987,1
+Slovak Republic,1988,1
+Slovak Republic,1989,1
+Slovak Republic,1990,1
+Slovak Republic,1991,1
+Slovenia,1970,1
+Slovenia,1971,1
+Slovenia,1972,1
+Slovenia,1973,1
+Slovenia,1974,1
+Slovenia,1975,1
+Slovenia,1976,1
+Slovenia,1977,1
+Slovenia,1978,1
+Slovenia,1979,1
+Slovenia,1980,1
+Slovenia,1981,1
+Slovenia,1982,1
+Slovenia,1983,1
+Slovenia,1984,1
+Slovenia,1985,1
+Slovenia,1986,1
+Slovenia,1987,1
+Slovenia,1988,1
+Slovenia,1989,1
+Slovenia,1990,1
+Slovenia,1991,1
+Slovenia,1992,1
+Slovenia,1993,1
+Slovenia,1994,1
+South Africa,1958,1
+South Africa,1959,1
+Spain,1956,1
+Spain,1957,1
+Spain,1958,1
+Spain,1959,1
+Spain,1960,1
+Spain,1961,1
+Spain,1962,1
+Spain,1963,1
+Spain,1964,1
+Spain,1965,1
+Spain,1966,1
+Spain,1967,1
+Spain,1968,1
+Spain,1969,1
+Switzerland,1956,1
+Switzerland,1957,1
+Switzerland,1958,1
+Switzerland,1959,1
+Switzerland,1960,1
+Switzerland,1961,1
+Switzerland,1962,1
+Switzerland,1963,1
+Switzerland,1964,1
+Switzerland,1965,1
+Switzerland,1966,1
+Switzerland,1967,1
+Switzerland,1968,1
+Switzerland,1969,1
+Switzerland,1970,1
+Switzerland,1971,1
+Switzerland,1972,1
+Switzerland,1973,1
+Switzerland,1974,1
+Switzerland,1975,1
+Switzerland,1976,1
+Switzerland,1977,1
+Switzerland,1978,1
+Switzerland,1979,1
+Turkey,1956,1
+Turkey,1957,1
+Turkey,1958,1
+Turkey,1959,1
+Turkey,1960,1
+Turkey,1961,1
+Turkey,1962,1
+Turkey,1963,1
+Turkey,1964,1
+Turkey,1965,1
+Turkey,1966,1
+Turkey,1967,1
+Turkey,1968,1
+Turkey,1969,1
+United States,1956,1
+United States,1957,1
+United States,1958,1
+United States,1959,1
+United States,1960,1
+United States,1961,1
+United States,1962,1
+United States,1963,1
+United States,1964,1
+United States,1965,1
+United States,1966,1
+United States,1967,1
+United States,1968,1
+United States,1969,1
+United States,2018,1
