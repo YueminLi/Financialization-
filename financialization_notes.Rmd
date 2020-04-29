@@ -1,0 +1,118 @@
+---
+title: "financialization"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Check NAs for dependent variables
+
+Read data. 
+oecd_percent.csv is produced by oecd.ipynb on April 26.
+
+```{r}
+setwd('~/Projects/financialization')
+library(data.table)
+df <- fread('oecd_percent.csv')
+df$V1 <- NULL
+```
+
+Keep only observations from 1970.
+1954 obs in total.
+```{r}
+library(tidyverse)
+df <- df %>%
+  filter(Year >= 1970)
+```
+
+### DV_NA (Value-added in financial corporations)
+Produce va_na for the dependent variable of value added. 
+The missing values are mainly from 1970-1994.
+```{r}
+table(is.na(df$DV_VA))
+va_na <- df[is.na(df$DV_VA),]
+table(va_na$Country)
+table(va_na$Year)
+```
+
+### DV_debt
+Produce va_na for the dependent variable of value added. 
+The missing values are mainly from 1970-1994. This is close to DV_VA
+```{r}
+table(is.na(df$DV_debt))
+va_na <- df[is.na(df$DV_debt),]
+table(va_na$Country)
+table(va_na$Year)
+```
+
+## Explore IMF DATA
+
+### Global Debt Database (GDD)
+The database is downloaded from here:
+https://www.imf.org/external/datamapper/datasets/GDD
+
+Variable Name Introduction
+pvd_all: private debt, all instruments
+pvd_ls: private debt, loans and debt securities
+hh_all: household debt, all instruments
+hh_ls: houshold debt, loans and debt securities
+nfc_all: nonfinancial corporate debt, all instruments
+nfc_ls: nonfinancial corporate debt, loans and debt securities
+ps: public sector debt
+nfps: nonfinancial public sector debt
+gg: general government debt
+cg: central government debt
+ngdp: Unsure, maybe "national gdp"
+
+```{r}
+gdd <- fread('global_debt_database.csv', header = TRUE)
+```
+
+### Historical Public Finance Dataset
+They have great visualization of debt.
+It is interesting to learn that the global debt is decreasing during most of the 1990s and the 2000s.
+link: http://data.imf.org/?sk=806ED027-520D-497F-9052-63EC199F5E63
+The database is available here: https://www.imf.org/external/np/fad/histdb/index.htm
+It also has a chartbook here:https://www.imf.org/external/pubs/ft/wp/2013/charts/wp1305_chartbk.pdf
+
+Variable Name Introduction
+rev: government revenue
+exp: government expenditure, percent of GDP
+prim_exp: government primary expenditure, percent of GDP
+ie: Interest paid on public debt, percent of GDP
+pb: government primary balance, percent of GDP
+d: gross public debt, percent of GDP
+rgc: real gdp growth rate, percent
+rltirc: real long term government bond yield, percent
+gg_debt: UNSURE
+gg_budg: UNSURE
+
+```{r}
+hpc <- fread('historical_public_finance_dataset.csv', header = TRUE)
+```
+
+### World Economic Outlook (WEO)
+```{r}
+weo <- fread('weo.csv', header = TRUE)
+```
+- Find no replacement of DV_VA, DV_debt, or DV_nonfinance in WEO
+- General data, maybe helpful for independent variables and control variables.
+
+### IFS
+International Financial Statistics
+http://data.imf.org/?sk=4C514D48-B6BA-49ED-8AB9-52B0C1A0179B
+```{R}
+library(data.table)
+library(tidyverse)
+ifs <- fread('~/Projects/financialization/ifs.csv', header = TRUE,  fill=TRUE)
+as.data.frame(table(ifs$`Indicator Name`)) -> ifs_indicator
+write.csv(ifs_indicator, '~/Projects/financialization/ifs_indicator.csv')
+```
+- Find no replacement of DV_VA, DV_debt, or DV_nonfinance in ifs
+- IFS is mainly a database for policies
+
+### Financial Soundness Indicators (FSIs)
+Almost all records start after 2000. Don't think this is helpful.
+But the database is downloaded and saved as FSI.csv.
