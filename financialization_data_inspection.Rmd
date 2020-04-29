@@ -52,7 +52,7 @@ table(va_na$Year)
 ```{r}
 weo <- fread('/Users/zhou-yimang/Projects/financialization/weo.csv', header = TRUE)
 ```
-- Find no replacement of DV_VA, DV_debt, or DV_nonfinance in ifs
+- Find no replacement of DV_VA, DV_debt, or DV_nonfinance in WEO
 
 ### IFS
 International Financial Statistics
