@@ -15,7 +15,7 @@ Keep only 1960-2018 variables
 ```{r}
 library(data.table)
 library(tidyverse)
-oecd <- fread("/Users/zhou-yimang/Projects/GitHub/Financialization-/data_processing/oecd_percent.csv")
+oecd <- fread("/Users/liyuemin/Desktop/Research/OECD Financialization Project/data_processing/oecd_percent.csv")
 oecd$V1 <- NULL
 oecd %>%
   filter(Year >= 1960) -> oecd
@@ -29,12 +29,13 @@ Create a new dataframe (va) with selected variables.<br/>
 ```{r}
 oecd %>%
 dplyr::select(Country, Year, DV_VAplus, IVlag1_DV_VAplus,
-              IV_lending, IV_gov_exp, IV_trade_balance, IV_fdi_outflow, nfc_ls,
-              IV_lending_lag1,IV_lending_lag2, IV_gov_exp_lag1,IV_gov_exp_lag2,
-              IV_trade_balance_lag1, IV_trade_balance_lag2, IV_fdi_outflow_lag1,
-              C_m2plus, C_NFLplus, C_REERplus, C_cpiplus, C_gdpplus) -> va
+              IV_lendingplus, IV_gov_expplus, IV_trade_balanceplus, IV_fdi_outflowplus, 
+              IV_lendingplus_lag1, IV_lendingplus_lag2, IV_gov_expplus_lag1, IV_gov_expplus_lag2,
+              IV_trade_balanceplus_lag1, IV_trade_balanceplus_lag2, IV_fdi_outflowplus_lag1, 
+              IV_fdi_outflowplus_lag2, C_m2plus, C_NFLplus, C_REERplus, C_cpiplus, C_gdpplus) -> va
 ```
 
+This has been fixed in jupyter notebook file.
 The dataframe is problematic because some countries in a certain year have multiple rows. <br/>
 Solution: <br/>
 1. make all NAs to 0 <br/>
@@ -57,37 +58,37 @@ NFLplus includes too many missing values, so omit it.
 some variables are values, not percentages.
 
 ```{r}
-library(Hmisc)
-describe(va$DV_VAplus)
-describe(va$IV_lending)
-describe(va$IV_gov_exp)
-describe(va$IV_trade_balance)
-describe(va$IV_fdi_outflow)
-describe(va$C_m2plus)
-describe(va$C_NFLplus)
-describe(va$C_REERplus)
-describe(va$C_cpiplus)
-describe(va$C_gdpplus)
+#library(Hmisc)
+#describe(va$DV_VAplus)
+#describe(va$IV_lending)
+#describe(va$IV_gov_exp)
+#describe(va$IV_trade_balance)
+#describe(va$IV_fdi_outflow)
+#describe(va$C_m2plus)
+#describe(va$C_NFLplus)
+#describe(va$C_REERplus)
+#describe(va$C_cpiplus)
+#describe(va$C_gdpplus)
 ```
 
 
 ```{r}
-library(Matrix)
-library(lfe)
-m1a <- felm(DV_VAplus ~ IVlag1_DV_VAplus+ IV_lending + IV_lending_lag1 + IV_lending_lag2 + 
-                        IV_gov_exp + IV_gov_exp_lag1 + IV_gov_exp_lag2 +
-                        C_m2plus + C_REERplus + C_cpiplus + C_gdpplus | Country + Year, data = va)
-summary(m1a)
+#library(Matrix)
+#library(lfe)
+#m1a <- felm(DV_VAplus ~ IVlag1_DV_VAplus+ IV_lending + IV_lending_lag1 + IV_lending_lag2 + 
+ #                       IV_gov_exp + IV_gov_exp_lag1 + IV_gov_exp_lag2 +
+  #                      C_m2plus + C_REERplus + C_cpiplus + C_gdpplus | Country + Year, data = va)
+#summary(m1a)
 ```
 
-Using plm to get equivalent result
+#Using plm to get equivalent result
 
 ```{r}
 library(Matrix)
 library(plm)
-m1a <- plm(DV_VAplus ~  IVlag1_DV_VAplus + IV_lending + IV_lending_lag1 + IV_lending_lag2 + 
-                        IV_gov_exp + IV_gov_exp_lag1 + IV_gov_exp_lag2 +
-                        C_m2plus + C_REERplus + C_cpiplus + C_gdpplus, 
+m1a <- plm(DV_VAplus ~  IVlag1_DV_VAplus + IV_lendingplus + IV_lendingplus_lag1 + IV_lendingplus_lag2 + 
+                        IV_gov_expplus + IV_gov_expplus_lag1 + IV_gov_expplus_lag2 +
+                        C_m2plus + C_REERplus + C_cpiplus + C_gdpplus + C_NFLplus, 
           data = va, model = 'within',
           effect = 'twoways', index = c('Country', 'Year'))
 summary(m1a)
@@ -98,9 +99,9 @@ summary(m1a)
 ```{r}
 library(Matrix)
 library(plm)
-m1b <- plm(DV_VAplus ~ IVlag1_DV_VAplus + IV_trade_balance + IV_trade_balance_lag1 + IV_trade_balance_lag2 +
-                       IV_fdi_outflow + IV_fdi_outflow_lag1 + 
-                       C_m2plus + C_REERplus + C_cpiplus + C_gdpplus, 
+m1b <- plm(DV_VAplus ~ IVlag1_DV_VAplus + IV_trade_balanceplus + IV_trade_balanceplus_lag1 + 
+             IV_trade_balanceplus_lag2 + IV_fdi_outflowplus + IV_fdi_outflowplus_lag1 + 
+             IV_fdi_outflowplus_lag2 + C_m2plus + C_REERplus + C_cpiplus + C_gdpplus + C_NFLplus, 
           data = va, model = 'within',
           effect = 'twoways', index = c('Country', 'Year'))
 summary(m1b)
@@ -114,14 +115,14 @@ summary(m1b)
 ```{r}
 oecd %>%
 dplyr::select(Country, Year, DV_domestic_creditplus, IVlag1_DV_domestic_dreditplus,
-              IV_lending, IV_gov_exp, IV_trade_balance, IV_fdi_outflow, nfc_ls,
-              IV_lending_lag1,IV_lending_lag2, IV_gov_exp_lag1,IV_gov_exp_lag2,
-              IV_trade_balance_lag1, IV_trade_balance_lag2, IV_fdi_outflow_lag1,
-              C_m2plus, C_NFLplus, C_REERplus, C_cpiplus, C_gdpplus) -> dc
-dc[is.na(dc)] <- 0
-aggregate(. ~ Country + Year, data = dc, sum) -> dc
-dc[dc==0] <- NA
-dc <- dc[!is.na(dc$DV_domestic_creditplus),]
+              IV_lendingplus, IV_gov_expplus, IV_trade_balanceplus, IV_fdi_outflowplus,
+              IV_lendingplus_lag1,IV_lendingplus_lag2, IV_gov_expplus_lag1,IV_gov_expplus_lag2,
+              IV_trade_balanceplus_lag1, IV_trade_balanceplus_lag2, IV_fdi_outflowplus_lag1, 
+              IV_fdi_outflowplus_lag2, C_m2plus, C_NFLplus, C_REERplus, C_cpiplus, C_gdpplus) -> dc
+#dc[is.na(dc)] <- 0
+#aggregate(. ~ Country + Year, data = dc, sum) -> dc
+#dc[dc==0] <- NA
+#dc <- dc[!is.na(dc$DV_domestic_creditplus),]
 ```
 
 ### 2.2 Fixed effect model (plm) on "Statecraft" hypothesis
@@ -130,9 +131,9 @@ Not significant
 ```{r}
 library(Matrix)
 library(plm)
-m2a <- plm(DV_domestic_creditplus ~  IVlag1_DV_domestic_dreditplus + IV_lending + IV_lending_lag1 + IV_lending_lag2 + 
-                                     IV_gov_exp + IV_gov_exp_lag1 + IV_gov_exp_lag2 +
-                                     C_m2plus + C_REERplus + C_cpiplus + C_gdpplus, 
+m2a <- plm(DV_domestic_creditplus ~  IVlag1_DV_domestic_dreditplus + IV_lendingplus + IV_lendingplus_lag1 + 
+             IV_lendingplus_lag2 + IV_gov_expplus + IV_gov_expplus_lag1 + IV_gov_expplus_lag2 +
+            C_m2plus + C_REERplus + C_cpiplus + C_gdpplus + C_NFLplus, 
           data = dc, model = 'within',
           effect = 'twoways', index = c('Country', 'Year'))
 summary(m2a)
@@ -144,10 +145,10 @@ summary(m2a)
 ```{r}
 library(Matrix)
 library(plm)
-m2b <- plm(DV_domestic_creditplus ~ IVlag1_DV_domestic_dreditplus + IV_trade_balance +
-                                    IV_trade_balance_lag1 + IV_trade_balance_lag2 +
-                                    IV_fdi_outflow + IV_fdi_outflow_lag1 + 
-                                    C_m2plus + C_REERplus + C_cpiplus + C_gdpplus, 
+m2b <- plm(DV_domestic_creditplus ~ IVlag1_DV_domestic_dreditplus + IV_trade_balanceplus +
+                                    IV_trade_balanceplus_lag1 + IV_trade_balanceplus_lag2 +
+                                    IV_fdi_outflowplus + IV_fdi_outflowplus_lag1 + IV_fdi_outflowplus_lag2 +
+                                    C_m2plus + C_REERplus + C_cpiplus + C_gdpplus + C_NFLplus, 
           data = dc, model = 'within',
           effect = 'twoways', index = c('Country', 'Year'))
 summary(m2b)
@@ -162,16 +163,15 @@ Obsevations might not be enough
 ```{r}
 oecd %>%
 dplyr::select(Country, Year, DV_nonfinanceplus, IVlag1_DV_nonfinanceplus,
-              IV_lending, IV_gov_exp, IV_trade_balance, IV_fdi_outflow, nfc_ls,
-              IV_lending_lag1,IV_lending_lag2, IV_gov_exp_lag1,IV_gov_exp_lag2,
-              IV_trade_balance_lag1, IV_trade_balance_lag2, IV_fdi_outflow_lag1,
-              C_m2plus, C_NFLplus, C_REERplus, C_cpiplus, C_gdpplus) -> nf
-nf[is.na(nf)] <- 0
-aggregate(. ~ Country + Year, data = nf, sum) -> nf
-nf[nf ==0] <- NA
-nf[nf ==Inf] <- NA
-
-nf <- nf[!is.na(nf$DV_nonfinanceplus),]
+              IV_lendingplus, IV_gov_expplus, IV_trade_balanceplus, IV_fdi_outflowplus,
+              IV_lendingplus_lag1,IV_lendingplus_lag2, IV_gov_expplus_lag1,IV_gov_expplus_lag2,
+              IV_trade_balanceplus_lag1, IV_trade_balanceplus_lag2, IV_fdi_outflowplus_lag1, 
+              IV_fdi_outflowplus_lag2, C_m2plus, C_NFLplus, C_REERplus, C_cpiplus, C_gdpplus) -> nf
+#nf[is.na(nf)] <- 0
+#aggregate(. ~ Country + Year, data = nf, sum) -> nf
+#nf[nf ==0] <- NA
+#nf[nf ==Inf] <- NA
+#nf <- nf[!is.na(nf$DV_nonfinanceplus),]
 ```
 
 
@@ -181,9 +181,9 @@ nf <- nf[!is.na(nf$DV_nonfinanceplus),]
 library(Matrix)
 library(plm)
 m3a <- plm(DV_nonfinanceplus ~  IVlag1_DV_nonfinanceplus +
-                                IV_lending + IV_lending_lag1 + IV_lending_lag2 + 
-                                IV_gov_exp + IV_gov_exp_lag1 + IV_gov_exp_lag2 +
-                                C_m2plus + C_REERplus + C_cpiplus + C_gdpplus, 
+                                IV_lendingplus + IV_lendingplus_lag1 + IV_lendingplus_lag2 + 
+                                IV_gov_expplus + IV_gov_expplus_lag1 + IV_gov_expplus_lag2 +
+                                C_m2plus + C_REERplus + C_cpiplus + C_gdpplus + C_NFLplus, 
           data = nf, model = 'within',
           effect = 'twoways', index = c('Country', 'Year'))
 summary(m3a)
@@ -194,76 +194,29 @@ summary(m3a)
 ```{r}
 library(Matrix)
 library(plm)
-m3b <- plm(DV_nonfinanceplus ~ IVlag1_DV_nonfinanceplus + IV_trade_balance +
-                               IV_trade_balance_lag1 + IV_trade_balance_lag2 +
-                               IV_fdi_outflow + IV_fdi_outflow_lag1 + 
-                               C_m2plus + C_REERplus + C_cpiplus + C_gdpplus, 
+m3b <- plm(DV_nonfinanceplus ~ IVlag1_DV_nonfinanceplus + IV_trade_balanceplus +
+                               IV_trade_balanceplus_lag1 + IV_trade_balanceplus_lag2 +
+                               IV_fdi_outflowplus + IV_fdi_outflowplus_lag1 + IV_fdi_outflowplus_lag2 +
+                               C_m2plus + C_REERplus + C_cpiplus + C_gdpplus + C_NFLplus, 
           data = nf, model = 'within',
           effect = 'twoways', index = c('Country', 'Year'))
 summary(m3b)
 ```
 
-## 4. Model 4: DV_pvd_lsplus
+## 4. Model 4: DV_nfc_lsplus
 
-### 4.1
+### 4.1 A similar method to clean data
 ```{r}
 oecd %>%
-dplyr::select(Country, Year, DV_pvd_lsplus, IVlag1_DV_pvd_lsplus,
-              IV_lending, IV_gov_exp, IV_trade_balance, IV_fdi_outflow, nfc_ls,
-              IV_lending_lag1,IV_lending_lag2, IV_gov_exp_lag1,IV_gov_exp_lag2,
-              IV_trade_balance_lag1, IV_trade_balance_lag2, IV_fdi_outflow_lag1,
-              C_m2plus, C_NFLplus, C_REERplus, C_cpiplus, C_gdpplus) -> pvd
-pvd[is.na(pvd)] <- 0
-aggregate(. ~ Country + Year, data = pvd, sum) -> pvd
-pvd[pvd ==0] <- NA
-pvd <- pvd[!is.na(pvd$DV_pvd_lsplus),]
-```
-
-### 4.2 Fixed effect model (plm) on "Statecraft" hypothesis
-
-```{r}
-library(Matrix)
-library(plm)
-m4a <- plm(DV_pvd_lsplus ~      IVlag1_DV_pvd_lsplus +
-                                IV_lending + IV_lending_lag1 + IV_lending_lag2 + 
-                                IV_gov_exp + IV_gov_exp_lag1 + IV_gov_exp_lag2 +
-                                C_m2plus + C_REERplus + C_cpiplus + C_gdpplus, 
-          data = pvd, model = 'within',
-          effect = 'twoways', index = c('Country', 'Year'))
-summary(m4a)
-```
-
-### 4.3 Fixed effect model (plm) on "hegemony" hypothesis
-
-Negative!!
-
-```{r}
-library(Matrix)
-library(plm)
-m3b <- plm(DV_pvd_lsplus ~     IVlag1_DV_pvd_lsplus + IV_trade_balance +
-                               IV_trade_balance_lag1 + IV_trade_balance_lag2 +
-                               IV_fdi_outflow + IV_fdi_outflow_lag1 + 
-                               C_m2plus + C_REERplus + C_cpiplus + C_gdpplus, 
-          data = pvd, model = 'within',
-          effect = 'twoways', index = c('Country', 'Year'))
-summary(m3b)
-```
-
-## 5. Model 5: DV_hh_lsplus
-
-### 5.1 A similar method to clean data
-
-```{r}
-oecd %>%
-dplyr::select(Country, Year, DV_hh_lsplus, IVlag1_DV_hh_lsplus,
-              IV_lending, IV_gov_exp, IV_trade_balance, IV_fdi_outflow, nfc_ls,
-              IV_lending_lag1,IV_lending_lag2, IV_gov_exp_lag1,IV_gov_exp_lag2,
-              IV_trade_balance_lag1, IV_trade_balance_lag2, IV_fdi_outflow_lag1,
-              C_m2plus, C_NFLplus, C_REERplus, C_cpiplus, C_gdpplus) -> hh
-hh[is.na(hh)] <- 0
-aggregate(. ~ Country + Year, data = hh, sum) -> hh
-hh[hh ==0] <- NA
-hh <- hh[!is.na(hh$DV_hh_lsplus),]
+dplyr::select(Country, Year, DV_nfc_lsplus, IVlag1_DV_nfc_lsplus,
+              IV_lendingplus, IV_gov_expplus, IV_trade_balanceplus, IV_fdi_outflowplus,
+              IV_lendingplus_lag1,IV_lendingplus_lag2, IV_gov_expplus_lag1,IV_gov_expplus_lag2,
+              IV_trade_balanceplus_lag1, IV_trade_balanceplus_lag2, IV_fdi_outflowplus_lag1,
+              IV_fdi_outflowplus_lag2, C_m2plus, C_NFLplus, C_REERplus, C_cpiplus, C_gdpplus) -> pvd
+#pvd[is.na(pvd)] <- 0
+#aggregate(. ~ Country + Year, data = pvd, sum) -> pvd
+#pvd[pvd ==0] <- NA
+#pvd <- pvd[!is.na(pvd$DV_pvd_lsplus),]
 ```
 
 ### 5.2 Fixed effect model (plm) on "Statecraft" hypothesis
@@ -271,31 +224,123 @@ hh <- hh[!is.na(hh$DV_hh_lsplus),]
 ```{r}
 library(Matrix)
 library(plm)
+m4a <- plm(DV_nfc_lsplus ~      IVlag1_DV_nfc_lsplus +
+                                IV_lendingplus + IV_lendingplus_lag1 + IV_lendingplus_lag2 + 
+                                IV_gov_expplus + IV_gov_expplus_lag1 + IV_gov_expplus_lag2 +
+                                C_m2plus + C_REERplus + C_cpiplus + C_gdpplus + C_NFLplus, 
+          data = pvd, model = 'within',
+          effect = 'twoways', index = c('Country', 'Year'))
+summary(m4a)
+```
+
+### 4.3 Fixed effect model (plm) on "hegemony" hypothesis
+
+```{r}
+library(Matrix)
+library(plm)
+m3b <- plm(DV_nfc_lsplus ~     IVlag1_DV_nfc_lsplus + IV_trade_balanceplus +
+                               IV_trade_balanceplus_lag1 + IV_trade_balanceplus_lag2 +
+                               IV_fdi_outflowplus + IV_fdi_outflowplus_lag1 + IV_fdi_outflowplus_lag2 +
+                               C_m2plus + C_REERplus + C_cpiplus + C_gdpplus + C_NFLplus, 
+          data = pvd, model = 'within',
+          effect = 'twoways', index = c('Country', 'Year'))
+summary(m3b)
+```
+
+
+## 5. Model 5: DV_pvd_lsplus
+
+### 5.1
+```{r}
+oecd %>%
+dplyr::select(Country, Year, DV_pvd_lsplus, IVlag1_DV_pvd_lsplus,
+              IV_lendingplus, IV_gov_expplus, IV_trade_balanceplus, IV_fdi_outflowplus,
+              IV_lendingplus_lag1,IV_lendingplus_lag2, IV_gov_expplus_lag1,IV_gov_expplus_lag2,
+              IV_trade_balanceplus_lag1, IV_trade_balanceplus_lag2, IV_fdi_outflowplus_lag1,
+              IV_fdi_outflowplus_lag2, C_m2plus, C_NFLplus, C_REERplus, C_cpiplus, C_gdpplus) -> pvd
+#pvd[is.na(pvd)] <- 0
+#aggregate(. ~ Country + Year, data = pvd, sum) -> pvd
+#pvd[pvd ==0] <- NA
+#pvd <- pvd[!is.na(pvd$DV_pvd_lsplus),]
+```
+
+### 5.2 Fixed effect model (plm) on "Statecraft" hypothesis
+
+```{r}
+library(Matrix)
+library(plm)
+m4a <- plm(DV_pvd_lsplus ~      IVlag1_DV_pvd_lsplus +
+                                IV_lendingplus + IV_lendingplus_lag1 + IV_lendingplus_lag2 + 
+                                IV_gov_expplus + IV_gov_expplus_lag1 + IV_gov_expplus_lag2 +
+                                C_m2plus + C_REERplus + C_cpiplus + C_gdpplus + C_NFLplus, 
+          data = pvd, model = 'within',
+          effect = 'twoways', index = c('Country', 'Year'))
+summary(m4a)
+```
+
+### 5.3 Fixed effect model (plm) on "hegemony" hypothesis
+
+Negative!!
+
+```{r}
+library(Matrix)
+library(plm)
+m3b <- plm(DV_pvd_lsplus ~     IVlag1_DV_pvd_lsplus + IV_trade_balanceplus +
+                               IV_trade_balanceplus_lag1 + IV_trade_balanceplus_lag2 +
+                               IV_fdi_outflowplus + IV_fdi_outflowplus_lag1 + IV_fdi_outflowplus_lag2 +
+                               C_m2plus + C_REERplus + C_cpiplus + C_gdpplus + C_NFLplus, 
+          data = pvd, model = 'within',
+          effect = 'twoways', index = c('Country', 'Year'))
+summary(m3b)
+```
+
+## 6. Model 6: DV_hh_lsplus
+
+### 6.1 A similar method to clean data
+
+```{r}
+oecd %>%
+dplyr::select(Country, Year, DV_hh_lsplus, IVlag1_DV_hh_lsplus,
+              IV_lendingplus, IV_gov_expplus, IV_trade_balanceplus, IV_fdi_outflowplus,
+              IV_lendingplus_lag1,IV_lendingplus_lag2, IV_gov_expplus_lag1,IV_gov_expplus_lag2,
+              IV_trade_balanceplus_lag1, IV_trade_balanceplus_lag2, IV_fdi_outflowplus_lag1,
+              IV_fdi_outflowplus_lag2, C_m2plus, C_NFLplus, C_REERplus, C_cpiplus, C_gdpplus) -> hh
+#hh[is.na(hh)] <- 0
+#aggregate(. ~ Country + Year, data = hh, sum) -> hh
+#hh[hh ==0] <- NA
+#hh <- hh[!is.na(hh$DV_hh_lsplus),]
+```
+
+### 6.2 Fixed effect model (plm) on "Statecraft" hypothesis
+
+```{r}
+library(Matrix)
+library(plm)
 m5a <- plm(DV_hh_lsplus~ IVlag1_DV_hh_lsplus +
-                         IV_lending + IV_lending_lag1 + IV_lending_lag2 + 
-                         IV_gov_exp + IV_gov_exp_lag1 + IV_gov_exp_lag2 +
-                         C_m2plus + C_REERplus + C_cpiplus + C_gdpplus, 
+                         IV_lendingplus + IV_lendingplus_lag1 + IV_lendingplus_lag2 + 
+                         IV_gov_expplus + IV_gov_expplus_lag1 + IV_gov_expplus_lag2 +
+                         C_m2plus + C_REERplus + C_cpiplus + C_gdpplus + C_NFLplus, 
           data = hh, model = 'within',
           effect = 'twoways', index = c('Country', 'Year'))
 summary(m5a)
 ```
 
-### 5.3 Fixed effect model (plm) on "Hegemony" hypothesis
+### 6.3 Fixed effect model (plm) on "Hegemony" hypothesis
 
 ```{r}
 library(Matrix)
 library(plm)
 m5b <- plm(DV_hh_lsplus~ IVlag1_DV_hh_lsplus +
-                         IV_trade_balance_lag1 + IV_trade_balance_lag2 +
-                         IV_gov_exp + IV_gov_exp_lag1 + IV_gov_exp_lag2 +
-                         C_m2plus + C_REERplus + C_cpiplus + C_gdpplus, 
+                         IV_trade_balanceplus + IV_trade_balanceplus_lag1 + IV_trade_balanceplus_lag2 +
+                         IV_gov_expplus + IV_gov_expplus_lag1 + IV_gov_expplus_lag2 +
+                         C_m2plus + C_REERplus + C_cpiplus + C_gdpplus + C_NFLplus, 
           data = hh, model = 'within',
           effect = 'twoways', index = c('Country', 'Year'))
 summary(m5b)
 ```
 
 
-### 6.prais_winsten models
+### 7.prais_winsten models
 
 
 library(prais)
@@ -305,4 +350,3 @@ p1a <- prais_winsten(DV_VAplus ~ IVlag1_DV_VAplus + IV_lending + IV_lending_lag1
                      index = c('Country', 'Year'),
                      data = va)
 summary(p1a)
-
