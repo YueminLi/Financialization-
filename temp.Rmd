@@ -14,8 +14,8 @@ Keep only 1960-2018 variables
 
 ```{r}
 library(tidyverse)
-oecd <- read.csv("/Users/liyuemin/Desktop/Research/OECD Financialization Project/data_processing/oecd_year1960_2018.csv")
-# oecd <- read.csv("data_processing/oecd_year1960_2018.csv")
+# oecd <- read.csv("/Users/liyuemin/Desktop/Research/OECD Financialization Project/data_processing/oecd_year1960_2018.csv")
+oecd <- read.csv("data_processing/oecd_year1960_2018.csv")
 oecd$X <- NULL
 oecd %>%
   filter(Year >= 1960) -> oecd
@@ -443,7 +443,7 @@ pgrangertest(DV_pvd_lsplus ~  IV_fdi_outflowplus, data = pvd)
 IVlag1_DV_pvd_lsplus ***
 
 ## 6. Model 6: DV_hh_lsplus
-Not working
+
 
 ### 6.0 A similar method to clean data
 
@@ -469,12 +469,15 @@ library(plm)
 m6a <- plm(DV_hh_lsplus~ IVlag1_DV_hh_lsplus +
                          IV_lendingplus + IV_lendingplus_lag1 + IV_lendingplus_lag2 + 
                          IV_gov_expplus + IV_gov_expplus_lag1 + IV_gov_expplus_lag2 +
-                         C_m2plus + C_REERplus + C_cpiplus + C_gdpplus + C_NFLplus, 
+                         C_m2plus + C_REERplus + C_cpiplus + C_gdpplus, 
           data = hh, model = 'within',
           effect = 'twoways', index = c('Country', 'Year'))
 summary(m6a)
 
-coeftest(m6a, vcovBK)
+summary(m6a, vcovBK)
+
+pgrangertest(DV_hh_lsplus ~  IV_lendingplus, data = hh)
+pgrangertest(DV_hh_lsplus ~  IV_gov_expplus, data = hh)
 ```
 
 ### 6.2 Fixed effect model (plm) on "Hegemony" hypothesis
@@ -486,22 +489,13 @@ library(plm)
 m6b <- plm(DV_hh_lsplus~ IVlag1_DV_hh_lsplus +
                          IV_trade_balanceplus + IV_trade_balanceplus_lag1 + IV_trade_balanceplus_lag2 +
                          IV_gov_expplus + IV_gov_expplus_lag1 + IV_gov_expplus_lag2 +
-                         C_m2plus + C_REERplus + C_cpiplus + C_gdpplus + C_NFLplus, 
+                         C_m2plus + C_REERplus + C_cpiplus + C_gdpplus, 
           data = hh, model = 'within',
           effect = 'twoways', index = c('Country', 'Year'))
 summary(m6b)
 
-coeftest(m6b, vcovBK)
+summary(m6b, vcovBK)
+
+pgrangertest(DV_hh_lsplus ~  IV_trade_balanceplus, data = hh)
+pgrangertest(DV_hh_lsplus ~  IV_fdi_outflowplus, data = hh)
 ```
-
-
-### 7.prais_winsten models
-
-
-library(prais)
-p1a <- prais_winsten(DV_VAplus ~ IVlag1_DV_VAplus + IV_lending + IV_lending_lag1 + IV_lending_lag2 + 
-                                 IV_gov_exp + IV_gov_exp_lag1 + IV_gov_exp_lag2 +
-                                 C_m2plus + C_REERplus + C_cpiplus + C_gdpplus , 
-                     index = c('Country', 'Year'),
-                     data = va)
-summary(p1a)
