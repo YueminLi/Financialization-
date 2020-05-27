@@ -5,18 +5,18 @@ output: html_document
 
 install.packages("pacman")
 library(pacman)
-p_load(data.table, tidyverse, Hmisc, Matrix, lfe, plm)
+p_load(data.table, tidyverse, Hmisc, Matrix, lfe, plm, dynlm)
 
 ## 0. Read the database
 
 Keep only 1960-2018 variables
-5706 observations, 42 variables
+2006 observations, 47 variables
 
 ```{r}
-library(data.table)
 library(tidyverse)
-oecd <- fread("/Users/liyuemin/Desktop/Research/OECD Financialization Project/data_processing/oecd_percent.csv")
-oecd$V1 <- NULL
+# oecd <- fread("/Users/liyuemin/Desktop/Research/OECD Financialization Project/data_processing/oecd_percent.csv")
+oecd <- read.csv("data_processing/oecd_year1960_2018.csv")
+oecd$X <- NULL
 oecd %>%
   filter(Year >= 1960) -> oecd
 colnames(oecd)
@@ -25,7 +25,9 @@ colnames(oecd)
 ## 1. Model 1: DV_VAplus
 
 Create a new dataframe (va) with selected variables.<br/>
-5706 observations with 21 variables
+996 observations with 21 variables
+
+### 1.1 Data Clean
 ```{r}
 oecd %>%
 dplyr::select(Country, Year, DV_VAplus, IVlag1_DV_VAplus,
@@ -33,44 +35,101 @@ dplyr::select(Country, Year, DV_VAplus, IVlag1_DV_VAplus,
               IV_lendingplus_lag1, IV_lendingplus_lag2, IV_gov_expplus_lag1, IV_gov_expplus_lag2,
               IV_trade_balanceplus_lag1, IV_trade_balanceplus_lag2, IV_fdi_outflowplus_lag1, 
               IV_fdi_outflowplus_lag2, C_m2plus, C_NFLplus, C_REERplus, C_cpiplus, C_gdpplus) -> va
-```
-
-This has been fixed in jupyter notebook file.
-The dataframe is problematic because some countries in a certain year have multiple rows. <br/>
-Solution: <br/>
-1. make all NAs to 0 <br/>
-2. aggregate all rows by country and year <br/>
-3. turn 0s back to NAs <br/>
-4. omit if DV is NA <br/>
-cleaned va has 996 observations with 21 variables
-```{r}
 va[is.na(va)] <- 0
 aggregate(. ~ Country + Year, data = va, sum) -> va
 va[va==0] <- NA
 va <- va[!is.na(va$DV_VAplus),]
 ```
 
+### 1.2 Augmented Dickey-Fuller (ADF) test for Unit Root
 
-### 1.1 Fixed effect model (lfe/plm) on "Statecraft" hypothesis
+http://www.econ.uiuc.edu/~econ508/R/e-ta8_R.html <br/>
+"The Dickey-Fuller test tests the null hypothesis that a unit root is present in an autoregressive model. The alternative hypothesis is different depending on which version of the test is used, but is usually stationarity and trend-stationary." (wikipeida) <br/>
+A unit root is present if $\rho = 1$ in $y_{t} = \rho y_{t-1}+u_{t}$.
 
-Descriptive statistics.
-NFLplus includes too many missing values, so omit it.
-some variables are values, not percentages.
-
+Define adf function
 ```{r}
-#library(Hmisc)
-#describe(va$DV_VAplus)
-#describe(va$IV_lending)
-#describe(va$IV_gov_exp)
-#describe(va$IV_trade_balance)
-#describe(va$IV_fdi_outflow)
-#describe(va$C_m2plus)
-#describe(va$C_NFLplus)
-#describe(va$C_REERplus)
-#describe(va$C_cpiplus)
-#describe(va$C_gdpplus)
+"adf" <- function(x,k = 0, int = TRUE, trend = FALSE){
+# NB:  returns conventional lm summary so p-values for adf test are wrong!
+    require(dynlm)
+    dx <- diff(x)
+    formula <- paste("dx ~ L(x)")
+    if(k > 0)
+        formula <- paste(formula," + L(dx,1:k)")
+    if(trend){
+        s <- time(x)
+        t <- ts(s - s[1],start = s[1],freq = frequency(x))
+        formula <- paste(formula," + t")
+        }
+    if(!int) formula <- paste(formula," - 1")
+    summary(dynlm(as.formula(formula)))
+}
 ```
 
+ADF test for each country
+Generate adf_test() function, the strategy is:
+1. extract the column of independent variable X from df
+2. for a certain country C, use adf() function to calculate the augmented Dickey-Fuller statistic for rejecting non-stationarity
+3. combine the results from all countries together and report
+
+```{r}
+adf_test <- function(df, x, k = k){
+   list<- c("country","lx_t")
+   df %>%
+     select(Country, Year, x) -> iv
+   iv <- na.omit(iv)
+   iv$Country <- as.character(iv$Country)
+   country <- data.frame(table(iv$Country))[,1]
+   for(i in 1:length(country)){
+     countryname = as.character(country[i])
+     temp <- iv %>%
+       filter(Country == countryname)
+     adf_iv <- ts(temp[,3])
+     adf(adf_iv, k = k, int = T, trend = T) -> adf_model
+     adf_model$coefficient[2,3] -> lx_t
+     newrow <- c(countryname, lx_t)
+     list <- rbind(list, newrow)
+   }
+   print(list)
+}
+```
+
+for example, the results for testing IV_lendingplus in va <br/>
+The Dickey-Fuller statistics should be about -2 with 0.05 confidence level <br/>
+It is clear that the non-stationarity hypothesis should be rejected for all countries except Netherland. 
+```{r}
+adf_test(va,"IV_lendingplus",1)
+```
+
+For IV_gov_expplus, we reject the null hypothesis except only two countries, Chile and Turkey.
+
+```{r}
+adf_test(va,"IV_gov_expplus",1)
+```
+
+For IV_trade_balanceplus, we reject the null hypothesis expect in Greece.
+```{r}
+adf_test(va,"IV_trade_balanceplus",1)
+```
+
+For IV_fdi_outflowplus, we cannot reject the null hypothesis in only two countries, Ireland and Netherland.
+```{r}
+adf_test(va,"IV_fdi_outflowplus",1)
+```
+
+### 1.3 Cointegration: Engle-Granger Test
+
+```{r}
+```
+
+
+
+
+
+
+### 1.1 Fixed effect model (plm) on "Statecraft" hypothesis
+
+The package lfe is equivalent to plm. Commented here.
 
 ```{r}
 #library(Matrix)
@@ -81,18 +140,19 @@ some variables are values, not percentages.
 #summary(m1a)
 ```
 
-#Using plm to get equivalent result
+Using plm to get equivalent result
 
 ```{r}
 library(Matrix)
 library(plm)
 m1a <- plm(DV_VAplus ~  IVlag1_DV_VAplus + IV_lendingplus + IV_lendingplus_lag1 + IV_lendingplus_lag2 + 
                         IV_gov_expplus + IV_gov_expplus_lag1 + IV_gov_expplus_lag2 +
-                        C_m2plus + C_REERplus + C_cpiplus + C_gdpplus + C_NFLplus, 
+                        C_m2plus + C_REERplus + C_cpiplus + C_gdpplus, 
           data = va, model = 'within',
           effect = 'twoways', index = c('Country', 'Year'))
 summary(m1a)
 ```
+
 
 ### 1.2 Fixed effect model (plm) on "hegemony" hypothesis
 
