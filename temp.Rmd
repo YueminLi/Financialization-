@@ -5,7 +5,7 @@ output: html_document
 
 install.packages("pacman")
 library(pacman)
-p_load(data.table, tidyverse, Hmisc, Matrix, lfe, plm, dynlm)
+p_load(data.table, tidyverse, Hmisc, Matrix, lfe, plm, dynlm, car, lmtest)
 
 ## 0. Read the database
 
@@ -14,34 +14,15 @@ Keep only 1960-2018 variables
 
 ```{r}
 library(tidyverse)
-# oecd <- fread("/Users/liyuemin/Desktop/Research/OECD Financialization Project/data_processing/oecd_percent.csv")
-oecd <- read.csv("data_processing/oecd_year1960_2018.csv")
+oecd <- read.csv("/Users/liyuemin/Desktop/Research/OECD Financialization Project/data_processing/oecd_year1960_2018.csv")
+# oecd <- read.csv("data_processing/oecd_year1960_2018.csv")
 oecd$X <- NULL
 oecd %>%
   filter(Year >= 1960) -> oecd
 colnames(oecd)
 ```
 
-## 1. Model 1: DV_VAplus
-
-Create a new dataframe (va) with selected variables.<br/>
-996 observations with 21 variables
-
-### 1.1 Data Clean
-```{r}
-oecd %>%
-dplyr::select(Country, Year, DV_VAplus, IVlag1_DV_VAplus,
-              IV_lendingplus, IV_gov_expplus, IV_trade_balanceplus, IV_fdi_outflowplus, 
-              IV_lendingplus_lag1, IV_lendingplus_lag2, IV_gov_expplus_lag1, IV_gov_expplus_lag2,
-              IV_trade_balanceplus_lag1, IV_trade_balanceplus_lag2, IV_fdi_outflowplus_lag1, 
-              IV_fdi_outflowplus_lag2, C_m2plus, C_NFLplus, C_REERplus, C_cpiplus, C_gdpplus) -> va
-va[is.na(va)] <- 0
-aggregate(. ~ Country + Year, data = va, sum) -> va
-va[va==0] <- NA
-va <- va[!is.na(va$DV_VAplus),]
-```
-
-### 1.2 Augmented Dickey-Fuller (ADF) test for Unit Root
+### 0.1 Augmented Dickey-Fuller (ADF) test for Unit Root
 
 http://www.econ.uiuc.edu/~econ508/R/e-ta8_R.html <br/>
 "The Dickey-Fuller test tests the null hypothesis that a unit root is present in an autoregressive model. The alternative hypothesis is different depending on which version of the test is used, but is usually stationarity and trend-stationary." (wikipeida) <br/>
@@ -98,33 +79,50 @@ for example, the results for testing IV_lendingplus in va <br/>
 The Dickey-Fuller statistics should be about -2 with 0.05 confidence level <br/>
 It is clear that the non-stationarity hypothesis should be rejected for all countries except Netherland. 
 ```{r}
-adf_test(va,"IV_lendingplus",1)
+adf_test(oecd,"IV_lendingplus",1)
 ```
 
 For IV_gov_expplus, we reject the null hypothesis except only two countries, Chile and Turkey.
 
 ```{r}
-adf_test(va,"IV_gov_expplus",1)
+adf_test(oecd,"IV_gov_expplus",1)
 ```
 
 For IV_trade_balanceplus, we reject the null hypothesis expect in Greece.
 ```{r}
-adf_test(va,"IV_trade_balanceplus",1)
+adf_test(oecd,"IV_trade_balanceplus",1)
 ```
 
 For IV_fdi_outflowplus, we cannot reject the null hypothesis in only two countries, Ireland and Netherland.
 ```{r}
-adf_test(va,"IV_fdi_outflowplus",1)
+adf_test(oecd,"IV_fdi_outflowplus",1)
 ```
 
-### 1.3 Cointegration: Engle-Granger Test
+### 0.2 Cointegration: Engle-Granger Test
 
 ```{r}
 ```
 
 
 
+## 1. Model 1: DV_VAplus
 
+Create a new dataframe (va) with selected variables.<br/>
+996 observations with 21 variables
+
+### 1.0 Data Clean
+```{r}
+oecd %>%
+dplyr::select(Country, Year, DV_VAplus, IVlag1_DV_VAplus,
+              IV_lendingplus, IV_gov_expplus, IV_trade_balanceplus, IV_fdi_outflowplus, 
+              IV_lendingplus_lag1, IV_lendingplus_lag2, IV_gov_expplus_lag1, IV_gov_expplus_lag2,
+              IV_trade_balanceplus_lag1, IV_trade_balanceplus_lag2, IV_fdi_outflowplus_lag1, 
+              IV_fdi_outflowplus_lag2, C_m2plus, C_NFLplus, C_REERplus, C_cpiplus, C_gdpplus) -> va
+va[is.na(va)] <- 0
+aggregate(. ~ Country + Year, data = va, sum) -> va
+va[va==0] <- NA
+va <- va[!is.na(va$DV_VAplus),]
+```
 
 
 ### 1.1 Fixed effect model (plm) on "Statecraft" hypothesis
@@ -145,32 +143,52 @@ Using plm to get equivalent result
 ```{r}
 library(Matrix)
 library(plm)
+library(car)
+library(lmtest)
+
 m1a <- plm(DV_VAplus ~  IVlag1_DV_VAplus + IV_lendingplus + IV_lendingplus_lag1 + IV_lendingplus_lag2 + 
                         IV_gov_expplus + IV_gov_expplus_lag1 + IV_gov_expplus_lag2 +
                         C_m2plus + C_REERplus + C_cpiplus + C_gdpplus, 
           data = va, model = 'within',
           effect = 'twoways', index = c('Country', 'Year'))
 summary(m1a)
-```
 
+summary(m1a, vcovBK)
+
+pdwtest(m1a)
+
+pgrangertest(DV_VAplus ~  IV_gov_expplus, data = va)
+pgrangertest(DV_VAplus ~  IV_lendingplus, data = va)
+```
+IV_GOV_EXPPLUS  **
 
 ### 1.2 Fixed effect model (plm) on "hegemony" hypothesis
 
 ```{r}
 library(Matrix)
 library(plm)
+library(car)
+library(lmtest)
+
 m1b <- plm(DV_VAplus ~ IVlag1_DV_VAplus + IV_trade_balanceplus + IV_trade_balanceplus_lag1 + 
              IV_trade_balanceplus_lag2 + IV_fdi_outflowplus + IV_fdi_outflowplus_lag1 + 
-             IV_fdi_outflowplus_lag2 + C_m2plus + C_REERplus + C_cpiplus + C_gdpplus + C_NFLplus, 
+             IV_fdi_outflowplus_lag2 + C_m2plus + C_REERplus + C_cpiplus + C_gdpplus, 
           data = va, model = 'within',
           effect = 'twoways', index = c('Country', 'Year'))
 summary(m1b)
-```
 
+summary(m1b, vcovBK)
+
+pdwtest(m1b)
+
+pgrangertest(DV_VAplus ~  IV_trade_balanceplus, data = va)
+pgrangertest(DV_VAplus ~  IV_fdi_outflowplus, data = va)
+```
+IV_fdi_outflowplus ***
 
 ## 2. Model 2: DV_domestic_credit
 
-### 2.1 A similar method to clean data
+### 2.0 A similar method to clean data
 
 ```{r}
 oecd %>%
@@ -179,45 +197,63 @@ dplyr::select(Country, Year, DV_domestic_creditplus, IVlag1_DV_domestic_dreditpl
               IV_lendingplus_lag1,IV_lendingplus_lag2, IV_gov_expplus_lag1,IV_gov_expplus_lag2,
               IV_trade_balanceplus_lag1, IV_trade_balanceplus_lag2, IV_fdi_outflowplus_lag1, 
               IV_fdi_outflowplus_lag2, C_m2plus, C_NFLplus, C_REERplus, C_cpiplus, C_gdpplus) -> dc
-#dc[is.na(dc)] <- 0
-#aggregate(. ~ Country + Year, data = dc, sum) -> dc
-#dc[dc==0] <- NA
-#dc <- dc[!is.na(dc$DV_domestic_creditplus),]
+dc[is.na(dc)] <- 0
+aggregate(. ~ Country + Year, data = dc, sum) -> dc
+dc[dc==0] <- NA
+dc <- dc[!is.na(dc$DV_domestic_creditplus),]
 ```
 
-### 2.2 Fixed effect model (plm) on "Statecraft" hypothesis
+### 2.1 Fixed effect model (plm) on "Statecraft" hypothesis
 
 Not significant
 ```{r}
 library(Matrix)
 library(plm)
+library(lmtest)
+library(car)
+
 m2a <- plm(DV_domestic_creditplus ~  IVlag1_DV_domestic_dreditplus + IV_lendingplus + IV_lendingplus_lag1 + 
              IV_lendingplus_lag2 + IV_gov_expplus + IV_gov_expplus_lag1 + IV_gov_expplus_lag2 +
-            C_m2plus + C_REERplus + C_cpiplus + C_gdpplus + C_NFLplus, 
+            C_m2plus + C_REERplus + C_cpiplus + C_gdpplus, 
           data = dc, model = 'within',
           effect = 'twoways', index = c('Country', 'Year'))
 summary(m2a)
+
+summary(m2a, vcovBK)
+
+pdwtest(m2a)
+
+pgrangertest(DV_domestic_creditplus ~  IV_lendingplus, data = dc)
+pgrangertest(DV_domestic_creditplus ~  IV_gov_expplus, data = dc)
 ```
 
 
-### 2.3 Fixed effect model (plm) on "hegemony" hypothesis
+### 2.2 Fixed effect model (plm) on "hegemony" hypothesis
 
 ```{r}
 library(Matrix)
 library(plm)
+
 m2b <- plm(DV_domestic_creditplus ~ IVlag1_DV_domestic_dreditplus + IV_trade_balanceplus +
                                     IV_trade_balanceplus_lag1 + IV_trade_balanceplus_lag2 +
                                     IV_fdi_outflowplus + IV_fdi_outflowplus_lag1 + IV_fdi_outflowplus_lag2 +
-                                    C_m2plus + C_REERplus + C_cpiplus + C_gdpplus + C_NFLplus, 
+                                    C_m2plus + C_REERplus + C_cpiplus + C_gdpplus, 
           data = dc, model = 'within',
           effect = 'twoways', index = c('Country', 'Year'))
 summary(m2b)
+
+summary(m2b, vcovBK)
+
+pdwtest(m2b)
+
+pgrangertest(DV_domestic_creditplus ~  IV_trade_balanceplus, data = dc)
+pgrangertest(DV_domestic_creditplus ~  IV_fdi_outflowplus, data = dc)
 ```
 
 
 ## 3. Model 3: DV_nonfinanceplus
 
-### 3.1 A similar method to clean data
+### 3.0 A similar method to clean data
 
 Obsevations might not be enough
 ```{r}
@@ -227,90 +263,123 @@ dplyr::select(Country, Year, DV_nonfinanceplus, IVlag1_DV_nonfinanceplus,
               IV_lendingplus_lag1,IV_lendingplus_lag2, IV_gov_expplus_lag1,IV_gov_expplus_lag2,
               IV_trade_balanceplus_lag1, IV_trade_balanceplus_lag2, IV_fdi_outflowplus_lag1, 
               IV_fdi_outflowplus_lag2, C_m2plus, C_NFLplus, C_REERplus, C_cpiplus, C_gdpplus) -> nf
-#nf[is.na(nf)] <- 0
-#aggregate(. ~ Country + Year, data = nf, sum) -> nf
-#nf[nf ==0] <- NA
-#nf[nf ==Inf] <- NA
-#nf <- nf[!is.na(nf$DV_nonfinanceplus),]
+nf[is.na(nf)] <- 0
+aggregate(. ~ Country + Year, data = nf, sum) -> nf
+nf[nf ==0] <- NA
+nf[nf ==Inf] <- NA
+nf <- nf[!is.na(nf$DV_nonfinanceplus),]
 ```
 
 
-### 3.2 Fixed effect model (plm) on "Statecraft" hypothesis
+### 3.1 Fixed effect model (plm) on "Statecraft" hypothesis
 
 ```{r}
 library(Matrix)
 library(plm)
+
 m3a <- plm(DV_nonfinanceplus ~  IVlag1_DV_nonfinanceplus +
                                 IV_lendingplus + IV_lendingplus_lag1 + IV_lendingplus_lag2 + 
                                 IV_gov_expplus + IV_gov_expplus_lag1 + IV_gov_expplus_lag2 +
-                                C_m2plus + C_REERplus + C_cpiplus + C_gdpplus + C_NFLplus, 
+                                C_m2plus + C_REERplus + C_cpiplus + C_gdpplus, 
           data = nf, model = 'within',
           effect = 'twoways', index = c('Country', 'Year'))
 summary(m3a)
+
+summary(m3a, vcovBK)
+
+pdwtest(m3a)
+
+pgrangertest(DV_nonfinanceplus ~  IV_lendingplus, data = nf)
+pgrangertest(DV_nonfinanceplus ~  IV_gov_expplus, data = nf)
 ```
 
-### 3.3 Fixed effect model (plm) on "hegemony" hypothesis
+### 3.2 Fixed effect model (plm) on "hegemony" hypothesis
 
 ```{r}
 library(Matrix)
 library(plm)
+
 m3b <- plm(DV_nonfinanceplus ~ IVlag1_DV_nonfinanceplus + IV_trade_balanceplus +
                                IV_trade_balanceplus_lag1 + IV_trade_balanceplus_lag2 +
                                IV_fdi_outflowplus + IV_fdi_outflowplus_lag1 + IV_fdi_outflowplus_lag2 +
-                               C_m2plus + C_REERplus + C_cpiplus + C_gdpplus + C_NFLplus, 
+                               C_m2plus + C_REERplus + C_cpiplus + C_gdpplus, 
           data = nf, model = 'within',
           effect = 'twoways', index = c('Country', 'Year'))
 summary(m3b)
+
+summary(m3b, vcovBK)
+
+pdwtest(m3b)
+
+pgrangertest(DV_nonfinanceplus ~  IV_trade_balanceplus, data = nf)
+pgrangertest(DV_nonfinanceplus ~  IV_fdi_outflowplus, data = nf)
 ```
 
 ## 4. Model 4: DV_nfc_lsplus
 
-### 4.1 A similar method to clean data
+### 4.0 A similar method to clean data
 ```{r}
 oecd %>%
 dplyr::select(Country, Year, DV_nfc_lsplus, IVlag1_DV_nfc_lsplus,
               IV_lendingplus, IV_gov_expplus, IV_trade_balanceplus, IV_fdi_outflowplus,
               IV_lendingplus_lag1,IV_lendingplus_lag2, IV_gov_expplus_lag1,IV_gov_expplus_lag2,
               IV_trade_balanceplus_lag1, IV_trade_balanceplus_lag2, IV_fdi_outflowplus_lag1,
-              IV_fdi_outflowplus_lag2, C_m2plus, C_NFLplus, C_REERplus, C_cpiplus, C_gdpplus) -> pvd
-#pvd[is.na(pvd)] <- 0
-#aggregate(. ~ Country + Year, data = pvd, sum) -> pvd
-#pvd[pvd ==0] <- NA
-#pvd <- pvd[!is.na(pvd$DV_pvd_lsplus),]
+              IV_fdi_outflowplus_lag2, C_m2plus, C_NFLplus, C_REERplus, C_cpiplus, C_gdpplus) -> nfc
+nfc[is.na(nfc)] <- 0
+aggregate(. ~ Country + Year, data = nfc, sum) -> nfc
+nfc[nfc ==0] <- NA
+nfc <- nfc[!is.na(nfc$DV_nfc_lsplus),]
 ```
 
-### 5.2 Fixed effect model (plm) on "Statecraft" hypothesis
+### 4.1 Fixed effect model (plm) on "Statecraft" hypothesis
 
 ```{r}
 library(Matrix)
 library(plm)
+
 m4a <- plm(DV_nfc_lsplus ~      IVlag1_DV_nfc_lsplus +
                                 IV_lendingplus + IV_lendingplus_lag1 + IV_lendingplus_lag2 + 
                                 IV_gov_expplus + IV_gov_expplus_lag1 + IV_gov_expplus_lag2 +
-                                C_m2plus + C_REERplus + C_cpiplus + C_gdpplus + C_NFLplus, 
-          data = pvd, model = 'within',
+                                C_m2plus + C_REERplus + C_cpiplus + C_gdpplus, 
+          data = nfc, model = 'within',
           effect = 'twoways', index = c('Country', 'Year'))
 summary(m4a)
-```
 
-### 4.3 Fixed effect model (plm) on "hegemony" hypothesis
+summary(m4a, vcovBK)
+
+pdwtest(m4a)
+
+pgrangertest(DV_nfc_lsplus ~  IV_lendingplus, data = nfc)
+pgrangertest(DV_nfc_lsplus ~  IV_gov_expplus, data = nfc)
+```
+IV_gov_expplus_lag2
+
+### 4.2 Fixed effect model (plm) on "hegemony" hypothesis
 
 ```{r}
 library(Matrix)
 library(plm)
-m3b <- plm(DV_nfc_lsplus ~     IVlag1_DV_nfc_lsplus + IV_trade_balanceplus +
+
+m4b <- plm(DV_nfc_lsplus ~     IVlag1_DV_nfc_lsplus + IV_trade_balanceplus +
                                IV_trade_balanceplus_lag1 + IV_trade_balanceplus_lag2 +
                                IV_fdi_outflowplus + IV_fdi_outflowplus_lag1 + IV_fdi_outflowplus_lag2 +
-                               C_m2plus + C_REERplus + C_cpiplus + C_gdpplus + C_NFLplus, 
-          data = pvd, model = 'within',
+                               C_m2plus + C_REERplus + C_cpiplus + C_gdpplus, 
+          data = nfc, model = 'within',
           effect = 'twoways', index = c('Country', 'Year'))
-summary(m3b)
-```
+summary(m4b)
 
+summary(m4b, vcovBK)
+
+pdwtest(m4b)
+
+pgrangertest(DV_nfc_lsplus ~  IV_trade_balanceplus, data = nfc)
+pgrangertest(DV_nfc_lsplus ~  IV_fdi_outflowplus, data = nfc)
+```
+IVlag1_DV_nfc_lsplus ***
 
 ## 5. Model 5: DV_pvd_lsplus
 
-### 5.1
+### 5.0 A similar method to clean data
 ```{r}
 oecd %>%
 dplyr::select(Country, Year, DV_pvd_lsplus, IVlag1_DV_pvd_lsplus,
@@ -318,45 +387,65 @@ dplyr::select(Country, Year, DV_pvd_lsplus, IVlag1_DV_pvd_lsplus,
               IV_lendingplus_lag1,IV_lendingplus_lag2, IV_gov_expplus_lag1,IV_gov_expplus_lag2,
               IV_trade_balanceplus_lag1, IV_trade_balanceplus_lag2, IV_fdi_outflowplus_lag1,
               IV_fdi_outflowplus_lag2, C_m2plus, C_NFLplus, C_REERplus, C_cpiplus, C_gdpplus) -> pvd
-#pvd[is.na(pvd)] <- 0
-#aggregate(. ~ Country + Year, data = pvd, sum) -> pvd
-#pvd[pvd ==0] <- NA
-#pvd <- pvd[!is.na(pvd$DV_pvd_lsplus),]
+pvd[is.na(pvd)] <- 0
+aggregate(. ~ Country + Year, data = pvd, sum) -> pvd
+pvd[pvd ==0] <- NA
+pvd <- pvd[!is.na(pvd$DV_pvd_lsplus),]
 ```
 
-### 5.2 Fixed effect model (plm) on "Statecraft" hypothesis
+### 5.1 Fixed effect model (plm) on "Statecraft" hypothesis
 
 ```{r}
 library(Matrix)
 library(plm)
-m4a <- plm(DV_pvd_lsplus ~      IVlag1_DV_pvd_lsplus +
+
+m5a <- plm(DV_pvd_lsplus ~      IVlag1_DV_pvd_lsplus +
                                 IV_lendingplus + IV_lendingplus_lag1 + IV_lendingplus_lag2 + 
                                 IV_gov_expplus + IV_gov_expplus_lag1 + IV_gov_expplus_lag2 +
-                                C_m2plus + C_REERplus + C_cpiplus + C_gdpplus + C_NFLplus, 
+                                C_m2plus + C_REERplus + C_cpiplus + C_gdpplus, 
           data = pvd, model = 'within',
           effect = 'twoways', index = c('Country', 'Year'))
-summary(m4a)
-```
+summary(m5a)
 
-### 5.3 Fixed effect model (plm) on "hegemony" hypothesis
+summary(m5a, vcovBK)
+
+pdwtest(m5a)
+
+pgrangertest(DV_pvd_lsplus ~  IV_lendingplus, data = pvd)
+pgrangertest(DV_pvd_lsplus ~  IV_gov_expplus, data = pvd)
+```
+IVlag1 ***
+IV_lendingplus *
+
+### 5.2 Fixed effect model (plm) on "hegemony" hypothesis
 
 Negative!!
 
 ```{r}
 library(Matrix)
 library(plm)
-m3b <- plm(DV_pvd_lsplus ~     IVlag1_DV_pvd_lsplus + IV_trade_balanceplus +
+
+m5b <- plm(DV_pvd_lsplus ~     IVlag1_DV_pvd_lsplus + IV_trade_balanceplus +
                                IV_trade_balanceplus_lag1 + IV_trade_balanceplus_lag2 +
                                IV_fdi_outflowplus + IV_fdi_outflowplus_lag1 + IV_fdi_outflowplus_lag2 +
-                               C_m2plus + C_REERplus + C_cpiplus + C_gdpplus + C_NFLplus, 
+                               C_m2plus + C_REERplus + C_cpiplus + C_gdpplus, 
           data = pvd, model = 'within',
           effect = 'twoways', index = c('Country', 'Year'))
-summary(m3b)
+summary(m5b)
+
+summary(m5b, vcovBK)
+
+pdwtest(m5b)
+
+pgrangertest(DV_pvd_lsplus ~  IV_trade_balanceplus, data = pvd)
+pgrangertest(DV_pvd_lsplus ~  IV_fdi_outflowplus, data = pvd)
 ```
+IVlag1_DV_pvd_lsplus ***
 
 ## 6. Model 6: DV_hh_lsplus
+Not working
 
-### 6.1 A similar method to clean data
+### 6.0 A similar method to clean data
 
 ```{r}
 oecd %>%
@@ -365,38 +454,44 @@ dplyr::select(Country, Year, DV_hh_lsplus, IVlag1_DV_hh_lsplus,
               IV_lendingplus_lag1,IV_lendingplus_lag2, IV_gov_expplus_lag1,IV_gov_expplus_lag2,
               IV_trade_balanceplus_lag1, IV_trade_balanceplus_lag2, IV_fdi_outflowplus_lag1,
               IV_fdi_outflowplus_lag2, C_m2plus, C_NFLplus, C_REERplus, C_cpiplus, C_gdpplus) -> hh
-#hh[is.na(hh)] <- 0
-#aggregate(. ~ Country + Year, data = hh, sum) -> hh
-#hh[hh ==0] <- NA
-#hh <- hh[!is.na(hh$DV_hh_lsplus),]
+hh[is.na(hh)] <- 0
+aggregate(. ~ Country + Year, data = hh, sum) -> hh
+hh[hh ==0] <- NA
+hh <- hh[!is.na(hh$DV_hh_lsplus),]
 ```
 
-### 6.2 Fixed effect model (plm) on "Statecraft" hypothesis
+### 6.1 Fixed effect model (plm) on "Statecraft" hypothesis
 
 ```{r}
 library(Matrix)
 library(plm)
-m5a <- plm(DV_hh_lsplus~ IVlag1_DV_hh_lsplus +
+
+m6a <- plm(DV_hh_lsplus~ IVlag1_DV_hh_lsplus +
                          IV_lendingplus + IV_lendingplus_lag1 + IV_lendingplus_lag2 + 
                          IV_gov_expplus + IV_gov_expplus_lag1 + IV_gov_expplus_lag2 +
                          C_m2plus + C_REERplus + C_cpiplus + C_gdpplus + C_NFLplus, 
           data = hh, model = 'within',
           effect = 'twoways', index = c('Country', 'Year'))
-summary(m5a)
+summary(m6a)
+
+coeftest(m6a, vcovBK)
 ```
 
-### 6.3 Fixed effect model (plm) on "Hegemony" hypothesis
+### 6.2 Fixed effect model (plm) on "Hegemony" hypothesis
 
 ```{r}
 library(Matrix)
 library(plm)
-m5b <- plm(DV_hh_lsplus~ IVlag1_DV_hh_lsplus +
+
+m6b <- plm(DV_hh_lsplus~ IVlag1_DV_hh_lsplus +
                          IV_trade_balanceplus + IV_trade_balanceplus_lag1 + IV_trade_balanceplus_lag2 +
                          IV_gov_expplus + IV_gov_expplus_lag1 + IV_gov_expplus_lag2 +
                          C_m2plus + C_REERplus + C_cpiplus + C_gdpplus + C_NFLplus, 
           data = hh, model = 'within',
           effect = 'twoways', index = c('Country', 'Year'))
-summary(m5b)
+summary(m6b)
+
+coeftest(m6b, vcovBK)
 ```
 
 
