@@ -5,7 +5,7 @@ output: html_document
 ```{r}
 # install.packages("pacman")
 library(pacman)
-p_load(data.table, tidyverse, Hmisc, Matrix, lfe, plm, dynlm, car, lmtest)
+p_load(data.table, tidyverse, Hmisc, Matrix, lfe, plm, dynlm, car, lmtest, tseries, broom, knitr)
 ```
 
 ## 0. Read the database
@@ -15,7 +15,6 @@ Keep only 1960-2018 variables
 
 ```{r}
 library(tidyverse)
-# oecd <- read.csv("/Users/liyuemin/Desktop/Research/OECD Financialization Project/data_processing/oecd_year1960_2018.csv")
 oecd <- read.csv("data_processing/oecd_year1960_2018.csv")
 oecd$X <- NULL
 oecd %>%
@@ -83,27 +82,37 @@ It is clear that the non-stationarity hypothesis should be rejected for all coun
 adf_test(oecd,"IV_lendingplus",1)
 ```
 
-For IV_gov_expplus, we reject the null hypothesis except only two countries, Chile and Turkey.
-
 ```{r}
 adf_test(oecd,"IV_gov_expplus",1)
 ```
 
-For IV_trade_balanceplus, we reject the null hypothesis expect in Greece.
 ```{r}
 adf_test(oecd,"IV_trade_balanceplus",1)
 ```
 
-For IV_fdi_outflowplus, we cannot reject the null hypothesis in only two countries, Ireland and Netherland.
 ```{r}
 adf_test(oecd,"IV_fdi_outflowplus",1)
 ```
 
-### 0.2 Cointegration: Engle-Granger Test
+### 0.2 Cointegration: Phillips-Ouliaris test
 
 ```{r}
-```
+library(tseries)
+po.test(as.matrix(cbind(oecd$DV_VAplus, oecd$IV_lendingplus), demean=FALSE))
+po.test(as.matrix(cbind(oecd$DV_VAplus, oecd$IV_gov_expplus), demean=FALSE))
+po.test(as.matrix(cbind(oecd$DV_VAplus, oecd$IV_trade_balanceplus), demean=FALSE))
+po.test(as.matrix(cbind(oecd$DV_VAplus, oecd$IV_fdi_outflowplus), demean=FALSE))
 
+po.test(as.matrix(cbind(oecd$DV_nfc_lsplus, oecd$IV_lendingplus), demean=FALSE))
+po.test(as.matrix(cbind(oecd$DV_nfc_lsplus, oecd$IV_gov_expplus), demean=FALSE))
+po.test(as.matrix(cbind(oecd$DV_nfc_lsplus, oecd$IV_trade_balanceplus), demean=FALSE))
+po.test(as.matrix(cbind(oecd$DV_nfc_lsplus, oecd$IV_fdi_outflowplus), demean=FALSE))
+
+po.test(as.matrix(cbind(oecd$DV_hh_lsplus, oecd$IV_lendingplus), demean=FALSE))
+po.test(as.matrix(cbind(oecd$DV_hh_lsplus, oecd$IV_gov_expplus), demean=FALSE))
+po.test(as.matrix(cbind(oecd$DV_hh_lsplus, oecd$IV_trade_balanceplus), demean=FALSE))
+po.test(as.matrix(cbind(oecd$DV_hh_lsplus, oecd$IV_fdi_outflowplus), demean=FALSE))
+```
 
 
 ## 1. Model 1: DV_VAplus
@@ -125,23 +134,8 @@ va[va==0] <- NA
 va <- va[!is.na(va$DV_VAplus),]
 ```
 
-### 1.1 Fixed effect model (plm) on "Statecraft" hypothesis
+### 1.1 Fixed effect model (plm)
 
-The package lfe is equivalent to plm. Commented here.
-
-```{r}
-#library(Matrix)
-#library(lfe)
-#m1a <- felm(DV_VAplus ~ IVlag1_DV_VAplus + 
-#                        IV_lendingplus + IV_lendingplus_lag1 + IV_lendingplus_lag2 + 
-#                        IV_gov_expplus + IV_gov_expplus_lag1 + IV_gov_expplus_lag2 +
-#                        IV_trade_balanceplus + IV_trade_balanceplus_lag1 + IV_trade_balanceplus_lag2 +                                     IV_fdi_outflowplus + IV_fdi_outflowplus_lag1 + IV_fdi_outflowplus_lag2 +
-#                        C_m2plus + C_REERplus + C_cpiplus + C_gdpplus | Country + Year, data = va)
-#summary(m1a)
-```
-
-Using plm to get equivalent result
-IV_gov_expplus  *
 ```{r}
 library(Matrix)
 library(plm)
@@ -157,13 +151,66 @@ m1  <- plm(DV_VAplus ~  IVlag1_DV_VAplus +
           effect = 'twoways', index = c('Country', 'Year'))
 summary(m1)
 
+# PCSE
 summary(m1, vcovBK)
 
+# Durbin-Watson Statistics
 pdwtest(m1)
-
-pgrangertest(DV_VAplus ~  IV_gov_expplus, data = va)
-pgrangertest(DV_VAplus ~  IV_lendingplus, data = va)
 ```
+
+#### Hausman test
+```{r}
+m1_re  <- plm(DV_VAplus ~  IVlag1_DV_VAplus + 
+                        IV_lendingplus + IV_lendingplus_lag1 + IV_lendingplus_lag2 + 
+                        IV_gov_expplus + IV_gov_expplus_lag1 + IV_gov_expplus_lag2 +
+                        IV_trade_balanceplus + IV_trade_balanceplus_lag1 + IV_trade_balanceplus_lag2 +                                IV_fdi_outflowplus + IV_fdi_outflowplus_lag1 + IV_fdi_outflowplus_lag2 +
+                        C_m2plus + C_REERplus + C_cpiplus + C_gdpplus, 
+          data = va, model = 'random')
+phtest(m1, m1_re)
+```
+
+### 1.2 LSDV model
+
+```{r}
+library(Matrix)
+library(plm)
+library(car)
+library(lmtest)
+
+m1_lsdv  <- lm(DV_VAplus ~  IVlag1_DV_VAplus + 
+                        IV_lendingplus + IV_lendingplus_lag1 + IV_lendingplus_lag2 + 
+                        IV_gov_expplus + IV_gov_expplus_lag1 + IV_gov_expplus_lag2 +
+                        IV_trade_balanceplus + IV_trade_balanceplus_lag1 + IV_trade_balanceplus_lag2 +                                     IV_fdi_outflowplus + IV_fdi_outflowplus_lag1 + IV_fdi_outflowplus_lag2 +
+                        C_m2plus + C_REERplus + C_cpiplus + C_gdpplus + Country, data = va)
+summary(m1_lsdv)
+```
+
+#### F-test for significance of one-way FE model
+
+```{r}
+library(car)
+m1_lsdv %>% linearHypothesis(c("CountryBrazil = 0",
+                   "CountryCanada = 0", 
+                   "CountryChile = 0", 
+                   "CountryChina (People's Republic of) = 0",
+                   "CountryDenmark = 0", 
+                   "CountryHungary = 0", 
+                   "CountryIceland = 0",
+                   "CountryIsrael = 0", 
+                   "CountryJapan = 0", 
+                   "CountryKorea = 0",
+                   "CountryMexico = 0", 
+                   "CountryNew Zealand = 0", 
+                   "CountryNorway = 0",
+                   "CountryPoland = 0", 
+                   "CountrySouth Africa = 0", 
+                   "CountrySweden = 0",
+                   "CountrySwitzerland = 0", 
+                   "CountryTurkey = 0", 
+                   "CountryUnited Kingdom = 0",
+                   "CountryUnited States = 0"))
+```
+
 
 ## 2. Model 2: DV_nfc_lsplus
 
@@ -181,7 +228,7 @@ nfc[nfc ==0] <- NA
 nfc <- nfc[!is.na(nfc$DV_nfc_lsplus),]
 ```
 
-### 2.1 Fixed effect model (plm) on "Statecraft" hypothesis
+### 2.1 Fixed effect model (plm)
 
 ```{r}
 library(Matrix)
@@ -196,59 +243,70 @@ m2  <- plm(DV_nfc_lsplus ~      IVlag1_DV_nfc_lsplus +
           effect = 'twoways', index = c('Country', 'Year'))
 summary(m2)
 
+# PCSE
 summary(2, vcovBK)
 
+# Durbin-Watson statistics
 pdwtest(m2)
-
-pgrangertest(DV_nfc_lsplus ~  IV_lendingplus, data = nfc)
-pgrangertest(DV_nfc_lsplus ~  IV_gov_expplus, data = nfc)
 ```
 
-## 3. Model 3: DV_pvd_lsplus
-
-### 3.0 A similar method to clean data
+#### Hausman test
 ```{r}
-oecd %>%
-dplyr::select(Country, Year, DV_pvd_lsplus, IVlag1_DV_pvd_lsplus,
-              IV_lendingplus, IV_gov_expplus, IV_trade_balanceplus, IV_fdi_outflowplus,
-              IV_lendingplus_lag1,IV_lendingplus_lag2, IV_gov_expplus_lag1,IV_gov_expplus_lag2,
-              IV_trade_balanceplus_lag1, IV_trade_balanceplus_lag2, IV_fdi_outflowplus_lag1,
-              IV_fdi_outflowplus_lag2, C_m2plus, C_NFLplus, C_REERplus, C_cpiplus, C_gdpplus) -> pvd
-pvd[is.na(pvd)] <- 0
-aggregate(. ~ Country + Year, data = pvd, sum) -> pvd
-pvd[pvd ==0] <- NA
-pvd <- pvd[!is.na(pvd$DV_pvd_lsplus),]
+m2_re  <- plm(DV_nfc_lsplus ~      IVlag1_DV_nfc_lsplus +
+                        IV_lendingplus + IV_lendingplus_lag1 + IV_lendingplus_lag2 + 
+                        IV_gov_expplus + IV_gov_expplus_lag1 + IV_gov_expplus_lag2 +
+                        IV_trade_balanceplus + IV_trade_balanceplus_lag1 + IV_trade_balanceplus_lag2 +                                     IV_fdi_outflowplus + IV_fdi_outflowplus_lag1 + IV_fdi_outflowplus_lag2 +
+                        C_m2plus + C_REERplus + C_cpiplus + C_gdpplus, 
+          data = nfc, model = 'random')
+phtest(m2, m2_re)
 ```
 
-### 3.1 Fixed effect model (plm) 
+### 2.2 LSDV model
 
 ```{r}
 library(Matrix)
 library(plm)
+library(car)
+library(lmtest)
 
-m3 <- plm(DV_pvd_lsplus ~  IVlag1_DV_pvd_lsplus +
-                           IV_lendingplus + IV_lendingplus_lag1 + IV_lendingplus_lag2 + 
-                           IV_gov_expplus + IV_gov_expplus_lag1 + IV_gov_expplus_lag2 +
-                           IV_trade_balanceplus + IV_trade_balanceplus_lag1 + IV_trade_balanceplus_lag2 +                                     IV_fdi_outflowplus + IV_fdi_outflowplus_lag1 + IV_fdi_outflowplus_lag2 +
-                           C_m2plus + C_REERplus + C_cpiplus + C_gdpplus, 
-          data = pvd, model = 'within',
-          effect = 'twoways', index = c('Country', 'Year'))
-summary(m3)
-
-summary(m3, vcovBK)
-
-pdwtest(m3)
-
-pgrangertest(DV_pvd_lsplus ~  IV_lendingplus, data = pvd)
-pgrangertest(DV_pvd_lsplus ~  IV_gov_expplus, data = pvd)
+m2_lsdv  <- lm(DV_nfc_lsplus ~      IVlag1_DV_nfc_lsplus +
+                        IV_lendingplus + IV_lendingplus_lag1 + IV_lendingplus_lag2 + 
+                        IV_gov_expplus + IV_gov_expplus_lag1 + IV_gov_expplus_lag2 +
+                        IV_trade_balanceplus + IV_trade_balanceplus_lag1 + IV_trade_balanceplus_lag2 +                                     IV_fdi_outflowplus + IV_fdi_outflowplus_lag1 + IV_fdi_outflowplus_lag2 +
+                        C_m2plus + C_REERplus + C_cpiplus + C_gdpplus + Country, data = nfc)
+summary(m2_lsdv)
 ```
-IVlag1 ***
-IV_lendingplus *
 
-## 4. Model 4: DV_hh_lsplus
+#### F-test for significance of one-way FE model
+
+```{r}
+library(car)
+m2_lsdv %>% linearHypothesis(c("CountryBrazil = 0",
+                   "CountryCanada = 0", 
+                   "CountryChile = 0", 
+                   "CountryChina (People's Republic of) = 0",
+                   "CountryDenmark = 0", 
+                   "CountryHungary = 0", 
+                   "CountryIceland = 0",
+                   "CountryIsrael = 0", 
+                   "CountryJapan = 0", 
+                   "CountryKorea = 0",
+                   "CountryMexico = 0", 
+                   "CountryNew Zealand = 0", 
+                   "CountryNorway = 0",
+                   "CountryPoland = 0", 
+                   "CountrySouth Africa = 0", 
+                   "CountrySweden = 0",
+                   "CountrySwitzerland = 0", 
+                   "CountryTurkey = 0", 
+                   "CountryUnited Kingdom = 0",
+                   "CountryUnited States = 0"))
+```
 
 
-### 4.0 A similar method to clean data
+## 3. Model 3: DV_hh_lsplus
+
+### 3.0 A similar method to clean data
 
 ```{r}
 oecd %>%
@@ -263,24 +321,79 @@ hh[hh ==0] <- NA
 hh <- hh[!is.na(hh$DV_hh_lsplus),]
 ```
 
-### 4.1 Fixed effect model (plm) 
+### 3.1 Fixed effect model (plm) 
 
 ```{r}
 library(Matrix)
 library(plm)
 
-m6a <- plm(DV_hh_lsplus~ IVlag1_DV_hh_lsplus +
+m3 <- plm(DV_hh_lsplus~ IVlag1_DV_hh_lsplus +
                          IV_lendingplus + IV_lendingplus_lag1 + IV_lendingplus_lag2 + 
                          IV_gov_expplus + IV_gov_expplus_lag1 + IV_gov_expplus_lag2 +
                          IV_trade_balanceplus + IV_trade_balanceplus_lag1 + IV_trade_balanceplus_lag2 +                                     IV_fdi_outflowplus + IV_fdi_outflowplus_lag1 + IV_fdi_outflowplus_lag2 +
                          C_m2plus + C_REERplus + C_cpiplus + C_gdpplus, 
           data = hh, model = 'within',
           effect = 'twoways', index = c('Country', 'Year'))
-summary(m6a)
+summary(m3)
 
-summary(m6a, vcovBK)
+# PCSE
+summary(m3, vcovBK)
 
-pgrangertest(DV_hh_lsplus ~  IV_lendingplus, data = hh)
-pgrangertest(DV_hh_lsplus ~  IV_gov_expplus, data = hh)
+# Dubin-Watson Statistics
+pdwtest(m3)
 ```
 
+#### Hausman test
+```{r}
+m3_re  <- plm(DV_hh_lsplus~ IVlag1_DV_hh_lsplus +
+                         IV_lendingplus + IV_lendingplus_lag1 + IV_lendingplus_lag2 + 
+                         IV_gov_expplus + IV_gov_expplus_lag1 + IV_gov_expplus_lag2 +
+                         IV_trade_balanceplus + IV_trade_balanceplus_lag1 + IV_trade_balanceplus_lag2 +                                     IV_fdi_outflowplus + IV_fdi_outflowplus_lag1 + IV_fdi_outflowplus_lag2 +
+                         C_m2plus + C_REERplus + C_cpiplus + C_gdpplus, 
+          data = hh, model = 'random')
+
+summary(m3_re, vcovBK)
+phtest(m3, m3_re)
+```
+
+### 3.2 LSDV model
+
+```{r}
+library(Matrix)
+library(plm)
+library(car)
+library(lmtest)
+
+m3_lsdv  <- lm(DV_hh_lsplus~ IVlag1_DV_hh_lsplus +
+                         IV_lendingplus + IV_lendingplus_lag1 + IV_lendingplus_lag2 + 
+                         IV_gov_expplus + IV_gov_expplus_lag1 + IV_gov_expplus_lag2 +
+                         IV_trade_balanceplus + IV_trade_balanceplus_lag1 + IV_trade_balanceplus_lag2 +                                     IV_fdi_outflowplus + IV_fdi_outflowplus_lag1 + IV_fdi_outflowplus_lag2 +
+                         C_m2plus + C_REERplus + C_cpiplus + C_gdpplus + Country, data = hh)
+summary(m3_lsdv)
+```
+
+#### F-test for significance of one-way FE model
+
+```{r}
+library(car)
+m3_lsdv %>% linearHypothesis(c("CountryBrazil = 0",
+                   "CountryCanada = 0", 
+                   "CountryChile = 0", 
+                   "CountryChina (People's Republic of) = 0",
+                   "CountryDenmark = 0", 
+                   "CountryHungary = 0", 
+                   "CountryIceland = 0",
+                   "CountryIsrael = 0", 
+                   "CountryJapan = 0", 
+                   "CountryKorea = 0",
+                   "CountryMexico = 0", 
+                   "CountryNew Zealand = 0", 
+                   "CountryNorway = 0",
+                   "CountryPoland = 0", 
+                   "CountrySouth Africa = 0", 
+                   "CountrySweden = 0",
+                   "CountrySwitzerland = 0", 
+                   "CountryTurkey = 0", 
+                   "CountryUnited Kingdom = 0",
+                   "CountryUnited States = 0"))
+```
