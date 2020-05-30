@@ -244,7 +244,7 @@ m2  <- plm(DV_nfc_lsplus ~      IVlag1_DV_nfc_lsplus +
 summary(m2)
 
 # PCSE
-summary(2, vcovBK)
+summary(m2, vcovBK)
 
 # Durbin-Watson statistics
 pdwtest(m2)
@@ -354,6 +354,7 @@ m3_re  <- plm(DV_hh_lsplus~ IVlag1_DV_hh_lsplus +
 
 summary(m3_re, vcovBK)
 phtest(m3, m3_re)
+pdwtest(m3_re)
 ```
 
 ### 3.2 LSDV model
