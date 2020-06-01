@@ -55,7 +55,7 @@ Generate adf_test() function, the strategy is:
 
 ```{r}
 adf_test <- function(df, x, k = k){
-   list<- c("country","lx_t")
+   list<- c("country","lx_t","lx_p")
    df %>%
      select(Country, Year, x) -> iv
    iv <- na.omit(iv)
@@ -68,7 +68,8 @@ adf_test <- function(df, x, k = k){
      adf_iv <- ts(temp[,3])
      adf(adf_iv, k = k, int = T, trend = T) -> adf_model
      adf_model$coefficient[2,3] -> lx_t
-     newrow <- c(countryname, lx_t)
+     adf_model$coefficient[2,4] -> lx_p
+     newrow <- c(countryname, lx_t, lx_p)
      list <- rbind(list, newrow)
    }
    print(list)
