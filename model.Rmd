@@ -15,7 +15,7 @@ Keep only 1960-2018 variables
 
 ```{r}
 library(tidyverse)
-oecd <- read.csv("data_processing/oecd_year1960_2018.csv")
+oecd <- read.csv("data_processing/oecd_country1960_2018.csv")
 oecd$X <- NULL
 oecd %>%
   filter(Year >= 1960) -> oecd
@@ -78,7 +78,7 @@ adf_test <- function(df, x, k = k){
 
 for example, the results for testing IV_lendingplus in va <br/>
 The Dickey-Fuller statistics should be about -2 with 0.05 confidence level <br/>
-It is clear that the non-stationarity hypothesis should be rejected for all countries except Netherland. 
+
 ```{r}
 adf_test(oecd,"IV_lendingplus",1)
 ```
@@ -93,6 +93,22 @@ adf_test(oecd,"IV_trade_balanceplus",1)
 
 ```{r}
 adf_test(oecd,"IV_fdi_outflowplus",1)
+```
+
+```{r}
+adf_test(oecd,"C_REERplus",1)
+```
+
+```{r}
+adf_test(oecd,"C_cpiplus",1)
+```
+
+```{r}
+adf_test(oecd,"C_gdpplus",1)
+```
+
+```{r}
+adf_test(oecd,"C_m2plus",1)
 ```
 
 ### 0.2 Cointegration: Phillips-Ouliaris test
