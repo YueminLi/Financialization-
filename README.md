@@ -1,6 +1,6 @@
-# Hegemony_Pitfall_or_Statecraft_Toolkit
+# Development_Pitfall_or_Statecraft_Toolkit
 
-This repository contains our working documents to clean data and build statistical models for our co-author paper "Hegemony Pitfall or Statecraft Toolkit? Explaining the Rise of Financialization".
+This repository contains our working documents to clean data and build statistical models for our co-author paper "Development Pitfall or Statecraft Toolkit? Explaining the Rise of Financialization".
 
 ## Installation
 
