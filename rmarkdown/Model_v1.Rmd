@@ -1,7 +1,7 @@
 ---
-title: "New Hope"
-author: "Yimang Zhou"
-date: "4/18/2021"
+title: "New Mode Plus & Panel United Root"
+author: "Yimang Zhou", "Yuemin Li"
+date: "4/19/2021"
 output: html_document
 ---
 
@@ -163,11 +163,13 @@ variety
 Hypothesis 3.1 (Statecraft model): VA increases as governmental spending increases.
 Hypothesis 4.1 (development model): VA increases as fdi inflows
 
+
 ### 2.0 panel ADF test
 https://rdrr.io/rforge/punitroots/man/pCADFtest.html
 ```{r}
-install.packages("punitroots", repos="http://R-Forge.R-project.org")
-install.packages("CADFtest")
+p_load(fBasics,fUnitRoots)
+if (!require("punitroots"))install.packages("punitroots", repos="http://R-Forge.R-project.org")
+if (!require("CADFtest"))install.packages("CADFtest")
 #install.packages("ua")
 library(punitroots)
 ```
@@ -181,14 +183,14 @@ padf <- function(df, x){
   print(result)
 }
 
-VA_padf <- padf(df,"DV_VA")
-nfc_padf <- padf(df,"DV_nfc_ls")
-hh_padf <- padf(df,"DV_hh_ls")
-lending_padf <- padf(df, "IV_lending")
-govexp_padf <- padf(df, "IV_gov_exp")
-gini_padf <- padf(df, "IV_gini")
-trade_balance_padf <- padf(df, "IV_trade_balance")
-fdi_outflow_padf <- padf(df, "IV_fdi_outflow")
+VA_padf <- padf(df,"DV_VAplus")
+nfc_padf <- padf(df,"DV_nfc_lsplus")
+hh_padf <- padf(df,"DV_hh_lsplus")
+lending_padf <- padf(df, "IV_lendingplus")
+govexp_padf <- padf(df, "IV_gov_expplus")
+gini_padf <- padf(df, "IV_giniplus")
+trade_balance_padf <- padf(df, "IV_trade_balanceplus")
+fdi_outflow_padf <- padf(df, "IV_fdi_outflowplus")
 ```
 
 ### 2.1 sub-database
@@ -198,7 +200,7 @@ Get the countries of non-stationarity in DV_VA as the dataframe for financializa
 #VA_country <- na.omit(variety$country[variety$va == "non-stationarity"])
 
 df %>%
-dplyr::select(Country, Year, DV_VAplus, IVlag1_DV_VAplus,
+dplyr::select(Country, Year, DV_VAplus, DV_VAplus_lag1,
               IV_lendingplus, IV_gov_expplus, IV_trade_balanceplus, IV_fdi_outflowplus, IV_giniplus,
               IV_lendingplus_lag1, IV_lendingplus_lag2, IV_gov_expplus_lag1, IV_gov_expplus_lag2,
               IV_trade_balanceplus_lag1, IV_trade_balanceplus_lag2, IV_fdi_outflowplus_lag1, IV_fdi_outflowplus_lag2,
@@ -209,70 +211,6 @@ va[is.na(va)] <- 0
 aggregate(. ~ Country + Year, data = va, sum) -> va
 va[va==0] <- NA
 va <- va[!is.na(va$DV_VAplus),]
-```
-
-### 2.2 ADF test for independent variables
-
-```{r}
-adf_test(va,"DV_VAplus",1)
-```
-
-Luxembourg has not result; Netherlands and Slovenia are not stationary in IV_lendingplus. 
-
-```{r}
-adf_test(va,"IV_lendingplus",1)
-```
-
-```{r}
-#adf_test(va,"IV_gov_expplus",1)
-```
-Greece is not stationary on IV_trade_balanceplus
-
-```{r}
-adf_test(va,"IV_trade_balanceplus",1)
-```
-Ireland is not stationary on IV_fid_outflowplus
-
-```{r}
-adf_test(va,"IV_fdi_outflowplus",1)
-```
-Mexico is not stationary for IV_giniplus.
-
-```{r}
-adf_test(va,"IV_giniplus",1)
-```
-Canada and Iceland have p-value between 0.05-0.1, we'll take it as stationary. So all cases are stationary for C_REERplus
-
-```{r}
-adf_test(va,"C_REERplus",1)
-```
-Ireland and US are not stationary for C_cpiplus
-
-```{r}
-adf_test(va,"C_cpiplus",1)
-```
-Greece and Hungary have p-value between 0.05-0.1, and Portugal has p-value slightly larger than 0.1, and we'll take them as stationary.
-
-```{r}
-adf_test(va,"C_gdpplus",1)
-```
-
-Canada and Hungary have p-value between 0.05 and 1, and we accept them as stationary. Thus, all cases are stationary.
-
-```{r}
-adf_test(va,"C_m2plus",1)
-```
-
-For now, I rule out Luxembourg, Netherlands, Slovenia, Greece, and Ireland as unstationary cases and also rule out cpiplus from the control variables.(1021 obs of 23 variable)
-
-```{r}
-va <- va %>%
-  filter(Country != "Greece",
-         Country != "Ireland",
-        # Country != "Turkey",
-         Country != "Luxembourg",
-         Country != "Netherlands",
-         Country != "Slovenia")
 ```
 
 ### 2.3 Cointegration: Phillips-Ouliaris test
@@ -305,7 +243,7 @@ library(car)
 library(lmtest)
 
 # m1 is an FE model
-m1  <- plm(DV_VAplus ~  IVlag1_DV_VAplus + 
+m1  <- plm(DV_VAplus ~  DV_VAplus_lag1 + 
                         IV_lendingplus + IV_lendingplus_lag1 + #IV_lendingplus_lag2 + 
  #                       IV_gov_expplus + IV_gov_expplus_lag1 + #IV_gov_expplus_lag2 +
                         IV_giniplus + IV_giniplus_lag1 + #IV_giniplus_lag2 +           
@@ -323,7 +261,7 @@ summary(m1, vcovBK)
 pdwtest(m1)
 
 # m1_re is a RE model
-m1_re  <- plm(DV_VAplus ~  IVlag1_DV_VAplus + 
+m1_re  <- plm(DV_VAplus ~  DV_VAplus_lag1 + 
                         IV_lendingplus + IV_lendingplus_lag1 + #IV_lendingplus_lag2 + 
   #                      IV_gov_expplus + IV_gov_expplus_lag1 + #IV_gov_expplus_lag2 +
                         IV_giniplus +  IV_giniplus_lag1 + #IV_giniplus_lag2 +           
@@ -336,27 +274,8 @@ phtest(m1, m1_re)
 
 
 
-### 2.5 LSDV model
 
 The result supports hypothesis 4.1 
-
-```{r}
-library(Matrix)
-library(plm)
-library(car)
-library(lmtest)
-
-m1_lsdv  <- lm(DV_VAplus ~  IVlag1_DV_VAplus + 
-                        IV_lendingplus + IV_lendingplus_lag1 + #IV_lendingplus_lag2 + 
-                      #  IV_gov_expplus + IV_gov_expplus_lag1 + #IV_gov_expplus_lag2 +
-                        IV_giniplus + IV_giniplus_lag1 + #IV_giniplus_lag2 +           
-                        IV_trade_balanceplus + IV_trade_balanceplus_lag1 + #IV_trade_balanceplus_lag2 +                            
-                        IV_fdi_outflowplus + IV_fdi_outflowplus_lag1 + #IV_fdi_outflowplus_lag2 +
-                        C_m2plus + C_REERplus, # + C_gdpplus,  
-               data = va)
-summary(m1_lsdv)
-```
-
 
 
 
@@ -373,7 +292,7 @@ Get the countries of non-stationarity in DV_nfc_ls as the dataframe for financia
 ```{r}
 #nfc_country <- na.omit(variety$country[variety$nfc == "non-stationarity"])
 df %>%
-dplyr::select(Country, Year, DV_nfc_lsplus, IVlag1_DV_nfc_lsplus,
+dplyr::select(Country, Year, DV_nfc_lsplus, DV_nfc_lsplus_lag1,
               IV_lendingplus, IV_gov_expplus, IV_trade_balanceplus, IV_fdi_outflowplus, IV_giniplus,
               IV_lendingplus_lag1,IV_lendingplus_lag2, IV_gov_expplus_lag1,IV_gov_expplus_lag2,
               IV_trade_balanceplus_lag1, IV_trade_balanceplus_lag2, IV_fdi_outflowplus_lag1,
@@ -386,74 +305,6 @@ nfc[nfc ==0] <- NA
 nfc <- nfc[!is.na(nfc$DV_nfc_lsplus),]
 #nfc_country
 ```
-
-### 3.2 adf test for independent variables
-
-```{r}
-adf_test(nfc,"DV_nfc_lsplus",1)
-```
-
-No results for Luxembourg and Russia; China, Netherlands, and Slovenia are not stationary.
-
-```{r}
-adf_test(nfc,"IV_lendingplus",1)
-```
-
-```{r}
-#adf_test(nfc,"IV_gov_expplus",1)
-```
-
-Not stationary in Romania, Greece.
-
-```{r}
-adf_test(nfc,"IV_trade_balanceplus",1)
-```
-Ireland, Kazakhstan are not stationary.
-
-```{r}
-adf_test(nfc,"IV_fdi_outflowplus",1)
-```
-South Africa is not stationary.
-
-```{r}
-adf_test(nfc,"IV_giniplus",1)
-```
-
-South Africa is not stationary.
-
-```{r}
-adf_test(nfc,"C_REERplus",1)
-```
-Ireland is not stationary.
-
-```{r}
-adf_test(nfc,"C_cpiplus",1)
-```
-All are stationary.
-
-```{r}
-adf_test(nfc,"C_gdpplus",1)
-```
-Indonesia, Mauritius, Thailand are not stationary.
-
-```{r}
-adf_test(nfc,"C_m2plus",1)
-```
-
-So I rule out 16 countries
-
-```{r}
-nfc_non_country <- c("Luxembourg","Russua", "Indonesia","Mauritius","Ireland",
-                     "China (People's Republic of)","Thailand","South Africa", "Kazakhstan","Romania",
-                     "Greece", "Netherland", "Slovenia", "Afghanistan", "Bangladesh", "U.A.E")
-
-for(country in nfc_non_country){
-  nfc <- nfc %>%
-    filter(nfc$Country != country)
-}
-```
-
-
 
 ### 3.3 Cointegration: Phillips-Ouliaris test
 
@@ -475,7 +326,7 @@ library(car)
 library(lmtest)
 
 # m1 is an FE model
-m2  <- plm(DV_nfc_lsplus ~  IVlag1_DV_nfc_lsplus + 
+m2  <- plm(DV_nfc_lsplus ~  DV_nfc_lsplus_lag1 + 
                         IV_lendingplus + IV_lendingplus_lag1 + #IV_lendingplus_lag2 + 
                       #  IV_gov_expplus + IV_gov_expplus_lag1 + #IV_gov_expplus_lag2 +
                         IV_giniplus + IV_giniplus_lag1 + #IV_giniplus_lag2 +           
@@ -493,7 +344,7 @@ summary(m2, vcovBK)
 pdwtest(m2)
 
 # m1_re is a RE model
-m2_re  <- plm(DV_nfc_lsplus ~  IVlag1_DV_nfc_lsplus + 
+m2_re  <- plm(DV_nfc_lsplus ~  DV_nfc_lsplus_lag1 + 
                         IV_lendingplus + IV_lendingplus_lag1 + #IV_lendingplus_lag2 + 
                        # IV_gov_expplus + IV_gov_expplus_lag1 + #IV_gov_expplus_lag2 +
                         IV_giniplus +  IV_giniplus_lag1 + #IV_giniplus_lag2 +           
@@ -517,7 +368,7 @@ Get the countries of non-stationarity in DV_nfc_ls as the dataframe for financia
 ```{r}
 #hh_country <- na.omit(variety$country[variety$hh == "non-stationarity"])
 df %>%
-dplyr::select(Country, Year, DV_hh_lsplus, IVlag1_DV_hh_lsplus,
+dplyr::select(Country, Year, DV_hh_lsplus, DV_hh_lsplus_lag1,
               IV_lendingplus, IV_gov_expplus, IV_trade_balanceplus, IV_fdi_outflowplus, IV_giniplus,
               IV_lendingplus_lag1,IV_lendingplus_lag2, IV_gov_expplus_lag1,IV_gov_expplus_lag2,
               IV_trade_balanceplus_lag1, IV_trade_balanceplus_lag2, IV_fdi_outflowplus_lag1,
@@ -530,75 +381,6 @@ hh[hh ==0] <- NA
 hh <- hh[!is.na(hh$DV_hh_lsplus),]
 #hh_country
 ```
-
-### 4.2 adf test for independent variables
-
-```{r}
-adf_test(hh,"DV_hh_lsplus",1)
-```
-
-No results for Russia; China and Netherlands are not stationary.
-
-```{r}
-adf_test(nfc,"IV_lendingplus",1)
-```
-
-```{r}
-#adf_test(nfc,"IV_gov_expplus",1)
-```
-
-Not stationary in Myanmar.
-
-```{r}
-adf_test(nfc,"IV_trade_balanceplus",1)
-```
-All are stationary.
-
-```{r}
-adf_test(nfc,"IV_fdi_outflowplus",1)
-```
-All are stationary.
-
-```{r}
-adf_test(nfc,"IV_giniplus",1)
-```
-
-All are stationary.
-
-```{r}
-adf_test(nfc,"C_REERplus",1)
-```
-All are stationary.
-
-```{r}
-adf_test(nfc,"C_cpiplus",1)
-```
-All are stationary.
-
-```{r}
-adf_test(nfc,"C_gdpplus",1)
-```
-All are stationary.
-
-```{r}
-adf_test(nfc,"C_m2plus",1)
-```
-
-So I rule out 4 countries
-
-```{r}
-nfc_non_country <- c("China (People's Republic of)", "Russia", "Netherland","Myanmar",
-                     "Albania","C.A.R","Congo,Republic of","India",
-                     "Kazakhastan","Nicaragua","Sierra Leone")
-
-for(country in nfc_non_country){
-  nfc <- nfc %>%
-    filter(nfc$Country != country)
-}
-```
-
-
-
 
 ### 4.3 Cointegration: Phillips-Ouliaris test
 
@@ -620,7 +402,7 @@ library(car)
 library(lmtest)
 
 # m1 is an FE model
-m3  <- plm(DV_hh_lsplus ~  IVlag1_DV_hh_lsplus + 
+m3  <- plm(DV_hh_lsplus ~  DV_hh_lsplus_lag1 + 
                         IV_lendingplus + IV_lendingplus_lag1 + #IV_lendingplus_lag2 + 
                       #  IV_gov_expplus + IV_gov_expplus_lag1 + #IV_gov_expplus_lag2 +
                         IV_giniplus + IV_giniplus_lag1 + #IV_giniplus_lag2 +           
@@ -638,7 +420,7 @@ summary(m3, vcovBK)
 pdwtest(m3)
 
 # m1_re is a RE model
-m3_re  <- plm(DV_hh_lsplus ~  IVlag1_DV_hh_lsplus + 
+m3_re  <- plm(DV_hh_lsplus ~  DV_hh_lsplus_lag1 + 
                         IV_lendingplus + IV_lendingplus_lag1 + #IV_lendingplus_lag2 + 
                        # IV_gov_expplus + IV_gov_expplus_lag1 + #IV_gov_expplus_lag2 +
                         IV_giniplus +  IV_giniplus_lag1 + #IV_giniplus_lag2 +           
@@ -648,29 +430,4 @@ m3_re  <- plm(DV_hh_lsplus ~  IVlag1_DV_hh_lsplus +
           data = hh, model = 'random')
 phtest(m3, m3_re)
 ```
-                      #  IV_gov_expplus + IV_gov_expplus_lag1 + #IV_gov_expplus_lag2 +
-                        IV_giniplus + IV_giniplus_lag1 + #IV_giniplus_lag2 +           
-                        IV_trade_balanceplus + IV_trade_balanceplus_lag1 + #IV_trade_balanceplus_lag2 +                            
-                        IV_fdi_outflowplus + IV_fdi_outflowplus_lag1 + #IV_fdi_outflowplus_lag2 +
-                        C_m2plus + C_REERplus, # + C_gdpplus, 
-          data = nfc, model = 'within',
-          effect = 'twoways', index = c('Country', 'Year'))
-summary(m2)
-
-# PCSE
-summary(m2, vcovBK)
-
-# Durbin-Watson Statistics
-pdwtest(m2)
-
-# m1_re is a RE model
-m2_re  <- plm(DV_nfc_lsplus ~  IVlag1_DV_nfc_lsplus + 
-                        IV_lendingplus + IV_lendingplus_lag1 + #IV_lendingplus_lag2 + 
-                       # IV_gov_expplus + IV_gov_expplus_lag1 + #IV_gov_expplus_lag2 +
-                        IV_giniplus +  IV_giniplus_lag1 + #IV_giniplus_lag2 +           
-                        IV_trade_balanceplus + IV_trade_balanceplus_lag1 + #IV_trade_balanceplus_lag2 +    
-                        IV_fdi_outflowplus +IV_fdi_outflowplus_lag1 + #IV_fdi_outflowplus_lag2 +
-                        C_m2plus + C_REERplus, # + C_gdpplus, 
-          data = nfc, model = 'random')
-phtest(m2, m2_re)
-```
+           
