@@ -163,6 +163,34 @@ variety
 Hypothesis 3.1 (Statecraft model): VA increases as governmental spending increases.
 Hypothesis 4.1 (development model): VA increases as fdi inflows
 
+### 2.0 panel ADF test
+https://rdrr.io/rforge/punitroots/man/pCADFtest.html
+```{r}
+install.packages("punitroots", repos="http://R-Forge.R-project.org")
+install.packages("CADFtest")
+#install.packages("ua")
+library(punitroots)
+```
+
+```{r}
+padf <- function(df, x){
+  df %>%
+    select(Country, Year, x) -> iv
+  iv <- na.omit(iv)
+  result = pCADFtest(Y=iv, max.lag.y = 5, criterion = "AIC", crosscorr=0.10)
+  print(result)
+}
+
+VA_padf <- padf(df,"DV_VA")
+nfc_padf <- padf(df,"DV_nfc_ls")
+hh_padf <- padf(df,"DV_hh_ls")
+lending_padf <- padf(df, "IV_lending")
+govexp_padf <- padf(df, "IV_gov_exp")
+gini_padf <- padf(df, "IV_gini")
+trade_balance_padf <- padf(df, "IV_trade_balance")
+fdi_outflow_padf <- padf(df, "IV_fdi_outflow")
+```
+
 ### 2.1 sub-database
 Get the countries of non-stationarity in DV_VA as the dataframe for financialization at the market level (DV_VA)
 
