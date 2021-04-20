@@ -1,0 +1,441 @@
+---
+title: "New Mode Plus & Panel United Root"
+author: "Yimang Zhou & Yuemin Li"
+date: "4/19/2021"
+output: html_document
+---
+
+```{r}
+if (!require("pacman")) install.packages("pacman")
+p_load(data.table, tidyverse, Hmisc, Matrix, lfe, plm, dynlm, car, lmtest, tseries, broom, knitr)
+```
+
+## 0. Data Preprocessing
+
+Keep only 1960-2018 variables.
+
+Instead of a selected bunch of countries, the dataframe df here includes all countries available.
+
+```{r}
+df <- read.csv("../data_processing/financialization_df.csv")
+df$X <- NULL
+df <- df %>%
+      filter(Year >= 1960) 
+colnames(df)
+```
+
+Then create lagged variables and plus variables.<br/>
+Here I only have to proceed the variable of IV_gini.
+
+```{r}
+df <- df %>%
+  group_by(Country) %>%
+  mutate(IV_gini_lag1 = dplyr::lag(IV_gini,k=1)) %>%
+  mutate(IV_giniplus = (IV_gini-IV_gini_lag1)/IV_gini_lag1*100) %>%
+  mutate(IV_giniplus_lag1 = dplyr::lag(IV_giniplus,k=1)) %>%
+  mutate(IV_giniplus_lag2 = dplyr::lag(IV_giniplus,k=2)) %>%
+  ungroup()
+```
+
+```{r}
+df <- df %>%
+  group_by(Country) %>%
+  mutate(IV_fdi_outflow_lag1 = dplyr::lag(IV_fdi_outflow,k=1)) %>%
+  mutate(IV_fdi_outflowplus = (IV_fdi_outflow-IV_fdi_outflow_lag1)/IV_fdi_outflow_lag1*100) %>%
+  mutate(IV_fdi_outflowplus_lag1 = dplyr::lag(IV_fdi_outflowplus,k=1)) %>%
+  ungroup()
+```
+
+In calculating "plus", it is possible to get inf results and they should be eliminated.
+```{r}
+turn_na <- function(a){
+  a[abs(a)>10^10] <- NA
+  a
+}
+for(i in 2:length(df)){
+  df[,i] <- lapply(df[,i], turn_na)
+}
+
+```
+
+Statistic description 
+It is weird that gdp has a lot of NAs.  
+
+```{r}
+for(i in 3:length(df)){
+result <- paste0(colnames(df[,i]), " has ", sum(is.na(df[,i])), " NAs.")
+print(result)
+}
+```
+## 1. Do the three levels of financialization co-occur and in the US only ? (Hypothesis 1 & 2)
+
+This part attempts to select countries experience financialization since 1960. We determine it by test if an indicator of financialization (i.e., a dependent variable) is stationary by ADF tests. If the indicator is stationary in a country, it indicates that the country is not financialized during the period in this dimension.
+
+"The Dickey-Fuller test tests the null hypothesis that a unit root is present in an autoregressive model. The alternative hypothesis is different depending on which version of the test is used, but is usually stationarity and trend-stationary." (wikipeida) 
+
+A unit root is present if $\rho = 1$ in $y_{t} = \rho y_{t-1}+u_{t}$.
+If the null hypothesis is not rejected, a unit root is present and the variable is not stationary. Instead, a variable is stationary if the null hypothesis is reject. 
+
+Define adf function (http://www.econ.uiuc.edu/~econ508/R/e-ta8_R.html)
+
+```{r}
+"adf" <- function(x,k = 0, int = TRUE, trend = FALSE){
+# NB:  returns conventional lm summary so p-values for adf test are wrong!
+    require(dynlm)
+    dx <- diff(x)
+    formula <- paste("dx ~ L(x)")
+    if(k > 0)
+        formula <- paste(formula," + L(dx,1:k)")
+    if(trend){
+        s <- time(x)
+        t <- ts(s - s[1],start = s[1],freq = frequency(x))
+        formula <- paste(formula," + t")
+        }
+    if(!int) formula <- paste(formula," - 1")
+    summary(dynlm(as.formula(formula)))
+}
+```
+
+
+ADF test for each country
+Generate adf_test() function, the strategy is:
+1. extract the column of independent variable X from df
+2. for a certain country C, use adf() function to calculate the augmented Dickey-Fuller statistic for rejecting non-stationarity
+3. combine the results from all countries together and report
+
+```{r}
+adf_test <- function(df, x, k = k){
+   result <- data.frame(country = c(),
+                        lx_t = c(),
+                        lx_p = c(),
+                        stationarity = c())
+   df %>%
+     select(Country, Year, x) -> iv
+   iv <- na.omit(iv)
+   iv$Country <- as.character(iv$Country)
+   country <- data.frame(table(iv$Country))[,1]
+   for(i in 1:length(country)){
+     countryname = as.character(country[i])
+     temp <- iv %>%
+       filter(Country == countryname)
+     adf_iv <- ts(temp[,3])
+     adf(adf_iv, k = k, int = T, trend = T) -> adf_model
+     adf_model$coefficient[2,3] -> lx_t
+     adf_model$coefficient[2,4] -> lx_p
+     stationarity = c()
+     stationarity[lx_p < 0.05] <- "stationarity"
+     stationarity[lx_p > 0.05] <- "non-stationarity"
+     newrow <- c(countryname, lx_t, lx_p, stationarity)
+     result <- rbind(result, newrow)
+   }
+   colnames(result) <- c("country","lx_t","lx_p","stationarity")
+   print(result)
+}
+```
+
+Adf test for DV_VA
+```{r}
+VA_adf <- adf_test(df,"DV_VA",1)
+```
+
+ADF test for DV_nfc_ls
+
+```{r}
+nfc_adf <- adf_test(df,"DV_nfc_ls",1)
+```
+
+ADF test for DV_hh_ls
+
+```{r}
+hh_adf <- adf_test(df,"DV_hh_ls",1)
+```
+Hypothesis 1: Financialization occurs in many other countries than the U.S.
+Hypothesis 2: The three levels of financialization do not co-occur in all countries. 
+
+Compare the varieties of financialization among different countries
+
+First, many countries find some kind of financialization. Only a few countries do not witness financialization in all the three levels (Austrialia, Belgium, Chile, Mexico). This supports Hypothesis 1.
+
+Second, only a few countries find all the three levels of financialization (Denmark, Greece, Hungary, Ireland, Japan, Turkey). Even in the U.S., financialization shows only in the level of the market. In most countries, the three levels of financialization do not co-occur.
+
+```{r}
+variety <- merge(VA_adf, nfc_adf, by = "country", all.y = T)
+variety <- merge(variety, hh_adf, by = "country", all.y = T)
+variety <- select(variety,
+                  country, stationarity.x, stationarity.y, stationarity)
+variety <- variety[,c("country", "stationarity.x", "stationarity.y", "stationarity")]
+colnames(variety) <- c("country", "va", "nfc", "hh")
+variety
+```
+## 2. Explain financialization in the level of the market
+
+Hypothesis 3.1 (Statecraft model): VA increases as governmental spending increases.
+Hypothesis 4.1 (development model): VA increases as fdi inflows
+
+
+### 2.0 panel ADF test
+https://rdrr.io/rforge/punitroots/man/pCADFtest.html
+```{r}
+p_load(fBasics,fUnitRoots)
+if (!require("punitroots"))install.packages("punitroots", repos="http://R-Forge.R-project.org")
+if (!require("CADFtest"))install.packages("CADFtest")
+#install.packages("ua")
+library(punitroots)
+```
+
+```{r}
+padf <- function(df, x){
+  df %>%
+    select(Country, Year, x) -> iv
+  iv <- na.omit(iv)
+  result = pCADFtest(Y=iv, max.lag.y = 5, criterion = "AIC", crosscorr=0.10)
+  print(result)
+}
+
+VA_padf <- padf(df,"DV_VAplus")
+nfc_padf <- padf(df,"DV_nfc_lsplus")
+hh_padf <- padf(df,"DV_hh_lsplus")
+lending_padf <- padf(df, "IV_lendingplus")
+govexp_padf <- padf(df, "IV_gov_expplus")
+gini_padf <- padf(df, "IV_giniplus")
+trade_balance_padf <- padf(df, "IV_trade_balanceplus")
+fdi_outflow_padf <- padf(df, "IV_fdi_outflowplus")
+```
+
+### 2.1 sub-database
+Get the countries of non-stationarity in DV_VA as the dataframe for financialization at the market level (DV_VA)
+
+```{r}
+#VA_country <- na.omit(variety$country[variety$va == "non-stationarity"])
+
+df %>%
+dplyr::select(Country, Year, DV_VAplus, DV_VAplus_lag1,
+              IV_lendingplus, IV_gov_expplus, IV_trade_balanceplus, IV_fdi_outflowplus, IV_giniplus,
+              IV_lendingplus_lag1, IV_gov_expplus_lag1,
+              IV_trade_balanceplus_lag1, IV_fdi_outflowplus_lag1,
+              IV_giniplus_lag1,
+              C_m2plus, C_REERplus, C_cpiplus, C_gdpplus) -> va
+#va[va$Country %in% VA_country,] -> va
+va[is.na(va)] <- 0
+aggregate(. ~ Country + Year, data = va, sum) -> va
+va[va==0] <- NA
+va <- va[!is.na(va$DV_VAplus),]
+```
+
+### 2.3 Cointegration: Phillips-Ouliaris test
+
+```{r}
+library(tseries)
+po.test(as.matrix(cbind(va$DV_VAplus, va$IV_lendingplus), demean=FALSE))
+#po.test(as.matrix(cbind(va$DV_VAplus, va$IV_gov_expplus), demean=FALSE))
+po.test(as.matrix(cbind(va$DV_VAplus, va$IV_trade_balanceplus), demean=FALSE))
+po.test(as.matrix(cbind(va$DV_VAplus, va$IV_fdi_outflowplus), demean=FALSE))
+po.test(as.matrix(cbind(va$DV_VAplus, va$IV_giniplus), demean=FALSE))
+```
+
+#### 2.4 FE test and Hausman test for va
+
+Here we use Hausman test to determine whether an FE model or a RE model fit the data better. The null hypothesis is to use the RE model.(No correlation between the unique errors and the regressors in the model). 
+
+RE model cannot include lag2 variables, otherwise it reports the error: (I doubt this is because there are only 19 countries in the model).
+
+Error in swar_Between_check(estm[[2L]], method) : 
+  model not estimable: 20 coefficient(s) (incl. intercept) to be estimated for the between model but only 11 individual(s)
+
+Hausman test supports null hypothesis. 
+
+
+```{r}
+library(Matrix)
+library(plm)
+library(car)
+library(lmtest)
+
+# m1 is an FE model
+m1  <- plm(DV_VAplus ~  DV_VAplus_lag1 + 
+                        IV_lendingplus + IV_lendingplus_lag1 + #IV_lendingplus_lag2 + 
+ #                       IV_gov_expplus + IV_gov_expplus_lag1 + #IV_gov_expplus_lag2 +
+                        IV_giniplus + IV_giniplus_lag1 + #IV_giniplus_lag2 +           
+                        IV_trade_balanceplus + IV_trade_balanceplus_lag1 + #IV_trade_balanceplus_lag2 +                            
+                        IV_fdi_outflowplus + IV_fdi_outflowplus_lag1 + #IV_fdi_outflowplus_lag2 +
+                        C_m2plus + C_REERplus + C_gdpplus + C_cpiplus, 
+          data = va, model = 'within',
+          effect = 'twoways', index = c('Country', 'Year'))
+summary(m1)
+
+# PCSE
+summary(m1, vcovBK)
+
+# Durbin-Watson Statistics
+pdwtest(m1)
+
+# m1_re is a RE model
+m1_re  <- plm(DV_VAplus ~  DV_VAplus_lag1 + 
+                        IV_lendingplus + IV_lendingplus_lag1 + #IV_lendingplus_lag2 + 
+  #                      IV_gov_expplus + IV_gov_expplus_lag1 + #IV_gov_expplus_lag2 +
+                        IV_giniplus +  IV_giniplus_lag1 + #IV_giniplus_lag2 +           
+                        IV_trade_balanceplus + IV_trade_balanceplus_lag1 + #IV_trade_balanceplus_lag2 +    
+                        IV_fdi_outflowplus +IV_fdi_outflowplus_lag1 + #IV_fdi_outflowplus_lag2 +
+                        C_m2plus + C_REERplus + C_gdpplus + C_cpiplus, 
+          data = va, model = 'random')
+phtest(m1, m1_re)
+```
+
+
+
+
+The result supports hypothesis 4.1 
+
+
+
+
+## 3. Explain financialization in the level of corporate
+
+Hypothesis 3.2 (Statecraft model): nfc increases as governmental spending increases.
+Hypothesis 4.2 (development model): nfc increases as fdi inflows
+
+### 3.1 sub-database
+
+Get the countries of non-stationarity in DV_nfc_ls as the dataframe for financialization at the market level
+
+```{r}
+#nfc_country <- na.omit(variety$country[variety$nfc == "non-stationarity"])
+df %>%
+dplyr::select(Country, Year, DV_nfc_lsplus, DV_nfc_lsplus_lag1,
+              IV_lendingplus, IV_gov_expplus, IV_trade_balanceplus, IV_fdi_outflowplus, IV_giniplus,
+              IV_lendingplus_lag1, IV_gov_expplus_lag1,
+              IV_trade_balanceplus_lag1, IV_fdi_outflowplus_lag1,
+              IV_giniplus_lag1, C_m2plus, C_REERplus, C_cpiplus, C_gdpplus) -> nfc
+#nfc <- nfc[nfc$Country %in% nfc_country,]
+nfc[is.na(nfc)] <- 0
+aggregate(. ~ Country + Year, data = nfc, sum) -> nfc
+nfc[nfc ==0] <- NA
+nfc <- nfc[!is.na(nfc$DV_nfc_lsplus),]
+#nfc_country
+```
+
+### 3.3 Cointegration: Phillips-Ouliaris test
+
+```{r}
+library(tseries)
+po.test(as.matrix(cbind(nfc$DV_nfc_lsplus, nfc$IV_lendingplus), demean=FALSE))
+#po.test(as.matrix(cbind(nfc$DV_nfc_lsplus, nfc$IV_gov_expplus), demean=FALSE))
+po.test(as.matrix(cbind(nfc$DV_nfc_lsplus, nfc$IV_trade_balanceplus), demean=FALSE))
+po.test(as.matrix(cbind(nfc$DV_nfc_lsplus, nfc$IV_fdi_outflowplus), demean=FALSE))
+po.test(as.matrix(cbind(nfc$DV_nfc_lsplus, nfc$IV_giniplus), demean=FALSE))
+```
+
+### 3.4 Hausman Test
+
+```{r}
+library(Matrix)
+library(plm)
+library(car)
+library(lmtest)
+
+# m1 is an FE model
+m2  <- plm(DV_nfc_lsplus ~  DV_nfc_lsplus_lag1 + 
+                        IV_lendingplus + IV_lendingplus_lag1 + #IV_lendingplus_lag2 + 
+                      #  IV_gov_expplus + IV_gov_expplus_lag1 + #IV_gov_expplus_lag2 +
+                        IV_giniplus + IV_giniplus_lag1 + #IV_giniplus_lag2 +           
+                        IV_trade_balanceplus + IV_trade_balanceplus_lag1 + #IV_trade_balanceplus_lag2 +                            
+                        IV_fdi_outflowplus + IV_fdi_outflowplus_lag1 + #IV_fdi_outflowplus_lag2 +
+                        C_m2plus + C_REERplus + C_gdpplus + C_cpiplus, 
+          data = nfc, model = 'within',
+          effect = 'twoways', index = c('Country', 'Year'))
+summary(m2)
+
+# PCSE
+summary(m2, vcovBK)
+
+# Durbin-Watson Statistics
+pdwtest(m2)
+
+# m1_re is a RE model
+m2_re  <- plm(DV_nfc_lsplus ~  DV_nfc_lsplus_lag1 + 
+                        IV_lendingplus + IV_lendingplus_lag1 + #IV_lendingplus_lag2 + 
+                       # IV_gov_expplus + IV_gov_expplus_lag1 + #IV_gov_expplus_lag2 +
+                        IV_giniplus +  IV_giniplus_lag1 + #IV_giniplus_lag2 +           
+                        IV_trade_balanceplus + IV_trade_balanceplus_lag1 + #IV_trade_balanceplus_lag2 +    
+                        IV_fdi_outflowplus +IV_fdi_outflowplus_lag1 + #IV_fdi_outflowplus_lag2 +
+                        C_m2plus + C_REERplus + C_gdpplus + C_cpiplus, 
+          data = nfc, model = 'random')
+phtest(m2, m2_re)
+```
+
+
+## 4. Explain financialization in the level of corporate
+
+Hypothesis 3.3 (Statecraft model): hh increases as governmental spending increases.
+Hypothesis 4.3 (development model): hh increases as fdi inflows
+
+### 4.1 sub-database
+
+Get the countries of non-stationarity in DV_nfc_ls as the dataframe for financialization at the market 
+
+```{r}
+#hh_country <- na.omit(variety$country[variety$hh == "non-stationarity"])
+df %>%
+dplyr::select(Country, Year, DV_hh_lsplus, DV_hh_lsplus_lag1,
+              IV_lendingplus, IV_gov_expplus, IV_trade_balanceplus, IV_fdi_outflowplus, IV_giniplus,
+              IV_lendingplus_lag1, IV_gov_expplus_lag1,
+              IV_trade_balanceplus_lag1, IV_fdi_outflowplus_lag1,
+              IV_giniplus_lag1,
+              C_m2plus, C_REERplus, C_cpiplus, C_gdpplus) -> hh
+#hh <- hh[hh$Country %in% hh_country,]
+hh[is.na(hh)] <- 0
+aggregate(. ~ Country + Year, data = hh, sum) -> hh
+hh[hh ==0] <- NA
+hh <- hh[!is.na(hh$DV_hh_lsplus),]
+#hh_country
+```
+
+### 4.3 Cointegration: Phillips-Ouliaris test
+
+```{r}
+library(tseries)
+po.test(as.matrix(cbind(nfc$DV_nfc_lsplus, nfc$IV_lendingplus), demean=FALSE))
+#po.test(as.matrix(cbind(nfc$DV_nfc_lsplus, nfc$IV_gov_expplus), demean=FALSE))
+po.test(as.matrix(cbind(nfc$DV_nfc_lsplus, nfc$IV_trade_balanceplus), demean=FALSE))
+po.test(as.matrix(cbind(nfc$DV_nfc_lsplus, nfc$IV_fdi_outflowplus), demean=FALSE))
+po.test(as.matrix(cbind(nfc$DV_nfc_lsplus, nfc$IV_giniplus), demean=FALSE))
+```
+
+### 4.4 Hausman Test
+
+```{r}
+library(Matrix)
+library(plm)
+library(car)
+library(lmtest)
+
+# m1 is an FE model
+m3  <- plm(DV_hh_lsplus ~  DV_hh_lsplus_lag1 + 
+                        IV_lendingplus + IV_lendingplus_lag1 + #IV_lendingplus_lag2 + 
+                      #  IV_gov_expplus + IV_gov_expplus_lag1 + #IV_gov_expplus_lag2 +
+                        IV_giniplus + IV_giniplus_lag1 + #IV_giniplus_lag2 +           
+                        IV_trade_balanceplus + IV_trade_balanceplus_lag1 + #IV_trade_balanceplus_lag2 +                            
+                        IV_fdi_outflowplus + IV_fdi_outflowplus_lag1 + #IV_fdi_outflowplus_lag2 +
+                        C_m2plus + C_REERplus + C_gdpplus + C_cpiplus, 
+          data = hh, model = 'within',
+          effect = 'twoways', index = c('Country', 'Year'))
+summary(m3)
+
+# PCSE
+summary(m3, vcovBK)
+
+# Durbin-Watson Statistics
+pdwtest(m3)
+
+# m1_re is a RE model
+m3_re  <- plm(DV_hh_lsplus ~  DV_hh_lsplus_lag1 + 
+                        IV_lendingplus + IV_lendingplus_lag1 + #IV_lendingplus_lag2 + 
+                       # IV_gov_expplus + IV_gov_expplus_lag1 + #IV_gov_expplus_lag2 +
+                        IV_giniplus +  IV_giniplus_lag1 + #IV_giniplus_lag2 +           
+                        IV_trade_balanceplus + IV_trade_balanceplus_lag1 + #IV_trade_balanceplus_lag2 +    
+                        IV_fdi_outflowplus +IV_fdi_outflowplus_lag1 + #IV_fdi_outflowplus_lag2 +
+                        C_m2plus + C_REERplus + C_gdpplus + C_cpiplus, 
+          data = hh, model = 'random')
+phtest(m3, m3_re)
+```
+           
