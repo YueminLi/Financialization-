@@ -213,7 +213,7 @@ dplyr::select(Country, Year, DV_VAplus, DV_VAplus_lag1,
               IV_lendingplus, IV_gov_expplus, IV_trade_balanceplus, IV_fdi_outflowplus, IV_giniplus,
               IV_lendingplus_lag1, IV_gov_expplus_lag1,
               IV_trade_balanceplus_lag1, IV_fdi_outflowplus_lag1,
-              IV_giniplus_lag1,
+              IV_giniplus_lag1, C_REER, C_gdp, C_cpi,
               C_m2plus, C_REERplus, C_cpiplus, C_gdpplus) -> va
 #va[va$Country %in% VA_country,] -> va
 va[is.na(va)] <- 0
@@ -258,7 +258,8 @@ m1  <- plm(DV_VAplus ~  DV_VAplus_lag1 +
                         IV_giniplus + IV_giniplus_lag1 + #IV_giniplus_lag2 +           
                         IV_trade_balanceplus + IV_trade_balanceplus_lag1 + #IV_trade_balanceplus_lag2 +                            
                         IV_fdi_outflowplus + IV_fdi_outflowplus_lag1 + #IV_fdi_outflowplus_lag2 +
-                        C_m2plus + C_REERplus + C_gdpplus + C_cpiplus, 
+                        #C_m2plus + 
+   C_REER + C_gdp + C_cpi, 
           data = va, model = 'within',
           effect = 'twoways', index = c('Country', 'Year'))
 summary(m1)
@@ -276,7 +277,8 @@ m1_re  <- plm(DV_VAplus ~  DV_VAplus_lag1 +
                         IV_giniplus +  IV_giniplus_lag1 + #IV_giniplus_lag2 +           
                         IV_trade_balanceplus + IV_trade_balanceplus_lag1 + #IV_trade_balanceplus_lag2 +    
                         IV_fdi_outflowplus +IV_fdi_outflowplus_lag1 + #IV_fdi_outflowplus_lag2 +
-                        C_m2plus + C_REERplus + C_gdpplus + C_cpiplus, 
+                        #C_m2plus + C_REERplus + C_gdpplus + C_cpiplus, 
+    C_REER + C_gdp + C_cpi,
           data = va, model = 'random')
 phtest(m1, m1_re)
 ```
@@ -305,7 +307,7 @@ dplyr::select(Country, Year, DV_nfc_lsplus, DV_nfc_lsplus_lag1,
               IV_lendingplus, IV_gov_expplus, IV_trade_balanceplus, IV_fdi_outflowplus, IV_giniplus,
               IV_lendingplus_lag1, IV_gov_expplus_lag1,
               IV_trade_balanceplus_lag1, IV_fdi_outflowplus_lag1,
-              IV_giniplus_lag1, C_m2plus, C_REERplus, C_cpiplus, C_gdpplus) -> nfc
+              IV_giniplus_lag1, C_m2plus, C_REERplus, C_cpiplus, C_gdpplus, C_REER, C_gdp, C_cpi) -> nfc
 #nfc <- nfc[nfc$Country %in% nfc_country,]
 nfc[is.na(nfc)] <- 0
 aggregate(. ~ Country + Year, data = nfc, sum) -> nfc
@@ -340,7 +342,8 @@ m2  <- plm(DV_nfc_lsplus ~  DV_nfc_lsplus_lag1 +
                         IV_giniplus + IV_giniplus_lag1 + #IV_giniplus_lag2 +           
                         IV_trade_balanceplus + IV_trade_balanceplus_lag1 + #IV_trade_balanceplus_lag2 +                            
                         IV_fdi_outflowplus + IV_fdi_outflowplus_lag1 + #IV_fdi_outflowplus_lag2 +
-                        C_m2plus + C_REERplus + C_gdpplus + C_cpiplus, 
+                        #C_m2plus + C_REERplus + C_gdpplus + C_cpiplus, 
+             C_REER + C_gdp + C_cpi,
           data = nfc, model = 'within',
           effect = 'twoways', index = c('Country', 'Year'))
 summary(m2)
@@ -358,7 +361,8 @@ m2_re  <- plm(DV_nfc_lsplus ~  DV_nfc_lsplus_lag1 +
                         IV_giniplus +  IV_giniplus_lag1 + #IV_giniplus_lag2 +           
                         IV_trade_balanceplus + IV_trade_balanceplus_lag1 + #IV_trade_balanceplus_lag2 +    
                         IV_fdi_outflowplus +IV_fdi_outflowplus_lag1 + #IV_fdi_outflowplus_lag2 +
-                        C_m2plus + C_REERplus + C_gdpplus + C_cpiplus, 
+                       # C_m2plus + C_REERplus + C_gdpplus + C_cpiplus, 
+                C_REER + C_gdp + C_cpi,
           data = nfc, model = 'random')
 phtest(m2, m2_re)
 ```
@@ -381,7 +385,8 @@ dplyr::select(Country, Year, DV_hh_lsplus, DV_hh_lsplus_lag1,
               IV_lendingplus_lag1, IV_gov_expplus_lag1,
               IV_trade_balanceplus_lag1, IV_fdi_outflowplus_lag1,
               IV_giniplus_lag1,
-              C_m2plus, C_REERplus, C_cpiplus, C_gdpplus) -> hh
+              C_m2plus, C_REERplus, C_cpiplus, C_gdpplus,
+              C_REER, C_gdp, C_cpi) -> hh
 #hh <- hh[hh$Country %in% hh_country,]
 hh[is.na(hh)] <- 0
 aggregate(. ~ Country + Year, data = hh, sum) -> hh
@@ -416,7 +421,8 @@ m3  <- plm(DV_hh_lsplus ~  DV_hh_lsplus_lag1 +
                         IV_giniplus + IV_giniplus_lag1 + #IV_giniplus_lag2 +           
                         IV_trade_balanceplus + IV_trade_balanceplus_lag1 + #IV_trade_balanceplus_lag2 +                            
                         IV_fdi_outflowplus + IV_fdi_outflowplus_lag1 + #IV_fdi_outflowplus_lag2 +
-                        C_m2plus + C_REERplus + C_gdpplus + C_cpiplus, 
+                        #C_m2plus + C_REERplus + C_gdpplus + C_cpiplus, 
+             C_REER + C_gdp + C_cpi,
           data = hh, model = 'within',
           effect = 'twoways', index = c('Country', 'Year'))
 summary(m3)
@@ -434,7 +440,8 @@ m3_re  <- plm(DV_hh_lsplus ~  DV_hh_lsplus_lag1 +
                         IV_giniplus +  IV_giniplus_lag1 + #IV_giniplus_lag2 +           
                         IV_trade_balanceplus + IV_trade_balanceplus_lag1 + #IV_trade_balanceplus_lag2 +    
                         IV_fdi_outflowplus +IV_fdi_outflowplus_lag1 + #IV_fdi_outflowplus_lag2 +
-                        C_m2plus + C_REERplus + C_gdpplus + C_cpiplus, 
+                        #C_m2plus + C_REERplus + C_gdpplus + C_cpiplus, 
+                C_REER + C_gdp + C_cpi,
           data = hh, model = 'random')
 phtest(m3, m3_re)
 ```
