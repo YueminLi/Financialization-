@@ -43,7 +43,7 @@ strict_gini <- select_wiid[duplicated(cbind(select_wiid$country, select_wiid$yea
 ## in this version, only arecovr is required to be "All",
 ## for other variables, we look for the second or third best if the best data are not available.
 
-wiid <- wiid[order(wiid$country, wiid$year, wiid$quality, wiid$source, wiid$popcovr, wiid$sharing_unit, wiid$scale, wiid$resource),]
+wiid <- wiid[order(wiid$country, wiid$year, wiid$quality, wiid$scale, wiid$resource, wiid$source, wiid$popcovr, wiid$sharing_unit),]
 select_wiid <- wiid %>%
   filter(areacovr == "All")
 relaxed_gini <- select_wiid[duplicated(cbind(select_wiid$country, select_wiid$year))==F,] 
