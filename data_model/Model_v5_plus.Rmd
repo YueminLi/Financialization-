@@ -77,6 +77,38 @@ result <- paste0(colnames(df[,i]), " has ", sum(is.na(df[,i])), " NAs.")
 print(result)
 }
 ```
+
+A graph to describe the distributions of the three DV across the countries.
+
+```{r}
+library(ggplot2)
+va <- select(df, 
+             Year, Country, DV_VA)
+va <- na.omit(va)
+
+ggplot(data=va, aes(y=Year, x = Country)) +
+  geom_tile(aes(fill = DV_VA)) +
+  scale_fill_gradient2(midpoint=15,
+                       low="#FFFFFF", mid="#ffb7c5", high = "#FF5576") +
+  theme_bw()
+
+rm(va)
+```
+
+```{r}
+library(ggplot2)
+nfc <- select(df, 
+             Year, Country, DV_nfc_ls)
+nfc <- na.omit(nfc)
+
+ggplot(data=nfc, aes(y=Year, x = Country)) +
+  geom_tile(aes(fill = DV_nfc_ls)) +
+  scale_fill_gradient2(midpoint=15,
+                       low="#FFFFFF", mid="#ffb7c5", high = "#FF5576") +
+  theme_bw()
+```
+
+
 ## 1. Do the three levels of financialization co-occur and in the US only ? (Hypothesis 1 & 2)
 
 This part attempts to select countries experience financialization since 1960. We determine it by test if an indicator of financialization (i.e., a dependent variable) is stationary by ADF tests. If the indicator is stationary in a country, it indicates that the country is not financialized during the period in this dimension.
@@ -225,7 +257,7 @@ dplyr::select(Country, Year, DV_VA_pc, DV_VA_pc_lag1,
               IV_lending_pc_lag1, IV_gov_exp_pc_lag1,
               IV_trade_balance_pc_lag1, IV_fdi_outflow_pc_lag1,
               IV_wgini_pc_lag1, C_REER, C_wgdp, C_cpi,
-              C_m2_pc, C_REER_pc, C_wgdp_pc) -> va
+              C_M2, C_REER, C_wgdp) -> va
 #va[va$Country %in% VA_country,] -> va
 va[is.na(va)] <- 0
 aggregate(. ~ Country + Year, data = va, sum) -> va
@@ -318,7 +350,7 @@ dplyr::select(Country, Year, DV_nfc_ls_pc, DV_nfc_ls_pc_lag1,
               IV_lending_pc, IV_gov_exp_pc, IV_trade_balance_pc, IV_fdi_outflow_pc, IV_wgini_pc,
               IV_lending_pc_lag1, IV_gov_exp_pc_lag1,
               IV_trade_balance_pc_lag1, IV_fdi_outflow_pc_lag1,
-              IV_wgini_pc_lag1, C_m2_pc, C_REER_pc, C_wgdp_pc, C_REER, C_wgdp, C_cpi) -> nfc
+              IV_wgini_pc_lag1, C_M2, C_REER, C_wgdp, C_cpi) -> nfc
 #nfc <- nfc[nfc$Country %in% nfc_country,]
 nfc[is.na(nfc)] <- 0
 aggregate(. ~ Country + Year, data = nfc, sum) -> nfc
@@ -396,7 +428,6 @@ dplyr::select(Country, Year, DV_hh_ls_pc, DV_hh_ls_pc_lag1,
               IV_lending_pc_lag1, IV_gov_exp_pc_lag1,
               IV_trade_balance_pc_lag1, IV_fdi_outflow_pc_lag1,
               IV_wgini_pc_lag1,
-              C_m2_pc, C_REER_pc, C_wgdp_pc,
               C_REER, C_wgdp, C_cpi) -> hh
 #hh <- hh[hh$Country %in% hh_country,]
 hh[is.na(hh)] <- 0
