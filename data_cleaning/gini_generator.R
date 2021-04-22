@@ -51,5 +51,5 @@ relaxed_gini <- select_wiid[duplicated(cbind(select_wiid$country, select_wiid$ye
 
 rm(select_wiid)
 
-write.csv(relaxed_gini, '../data_source/relaxed_gini.csv')
+write.csv(relaxed_gini, "../data_source/relaxed_gini.csv")
 
