@@ -46,6 +46,16 @@ df <- df %>%
   ungroup()
 ```
 
+```{r}
+df <- df %>%
+  group_by(Country) %>%
+  mutate(IV_wgini_lag1 = dplyr::lag(IV_wgini,k=1)) %>%
+  mutate(IV_wginiplus = (IV_wgini-IV_wgini_lag1)/IV_wgini_lag1*100) %>%
+  mutate(IV_wginiplus_lag1 = dplyr::lag(IV_wginiplus,k=1)) %>%
+  mutate(IV_wginiplus_lag2 = dplyr::lag(IV_wginiplus,k=2)) %>%
+  ungroup()
+```
+
 In calculating "plus", it is possible to get inf results and they should be eliminated.
 ```{r}
 turn_na <- function(a){
@@ -198,6 +208,7 @@ hh_padf <- padf(df,"DV_hh_lsplus")
 lending_padf <- padf(df, "IV_lendingplus")
 govexp_padf <- padf(df, "IV_gov_expplus")
 gini_padf <- padf(df, "IV_giniplus")
+wgini_padf <- padf(df, "IV_wginiplus")
 trade_balance_padf <- padf(df, "IV_trade_balanceplus")
 fdi_outflow_padf <- padf(df, "IV_fdi_outflowplus")
 ```
@@ -210,11 +221,11 @@ Get the countries of non-stationarity in DV_VA as the dataframe for financializa
 
 df %>%
 dplyr::select(Country, Year, DV_VAplus, DV_VAplus_lag1,
-              IV_lendingplus, IV_gov_expplus, IV_trade_balanceplus, IV_fdi_outflowplus, IV_giniplus,
+              IV_lendingplus, IV_gov_expplus, IV_trade_balanceplus, IV_fdi_outflowplus, IV_wginiplus,
               IV_lendingplus_lag1, IV_gov_expplus_lag1,
               IV_trade_balanceplus_lag1, IV_fdi_outflowplus_lag1,
-              IV_giniplus_lag1, C_REER, C_gdp, C_cpi,
-              C_m2plus, C_REERplus, C_cpiplus, C_gdpplus) -> va
+              IV_wginiplus_lag1, C_REER, C_wgdp, C_cpi,
+              C_m2plus, C_REERplus, C_wgdpplus) -> va
 #va[va$Country %in% VA_country,] -> va
 va[is.na(va)] <- 0
 aggregate(. ~ Country + Year, data = va, sum) -> va
@@ -255,11 +266,11 @@ library(lmtest)
 m1  <- plm(DV_VAplus ~  DV_VAplus_lag1 + 
                         IV_lendingplus + IV_lendingplus_lag1 + #IV_lendingplus_lag2 + 
  #                       IV_gov_expplus + IV_gov_expplus_lag1 + #IV_gov_expplus_lag2 +
-                        IV_giniplus + IV_giniplus_lag1 + #IV_giniplus_lag2 +           
+                        IV_wginiplus + IV_wginiplus_lag1 + #IV_giniplus_lag2 +           
                         IV_trade_balanceplus + IV_trade_balanceplus_lag1 + #IV_trade_balanceplus_lag2 +                            
                         IV_fdi_outflowplus + IV_fdi_outflowplus_lag1 + #IV_fdi_outflowplus_lag2 +
                         #C_m2plus + 
-   C_REER + C_gdp + C_cpi, 
+   C_REER + C_wgdp + C_cpi, 
           data = va, model = 'within',
           effect = 'twoways', index = c('Country', 'Year'))
 summary(m1)
@@ -274,11 +285,11 @@ pdwtest(m1)
 m1_re  <- plm(DV_VAplus ~  DV_VAplus_lag1 + 
                         IV_lendingplus + IV_lendingplus_lag1 + #IV_lendingplus_lag2 + 
   #                      IV_gov_expplus + IV_gov_expplus_lag1 + #IV_gov_expplus_lag2 +
-                        IV_giniplus +  IV_giniplus_lag1 + #IV_giniplus_lag2 +           
+                        IV_wginiplus +  IV_wginiplus_lag1 + #IV_giniplus_lag2 +           
                         IV_trade_balanceplus + IV_trade_balanceplus_lag1 + #IV_trade_balanceplus_lag2 +    
                         IV_fdi_outflowplus +IV_fdi_outflowplus_lag1 + #IV_fdi_outflowplus_lag2 +
                         #C_m2plus + C_REERplus + C_gdpplus + C_cpiplus, 
-    C_REER + C_gdp + C_cpi,
+    C_REER + C_wgdp + C_cpi,
           data = va, model = 'random')
 phtest(m1, m1_re)
 ```
@@ -304,10 +315,10 @@ Get the countries of non-stationarity in DV_nfc_ls as the dataframe for financia
 #nfc_country <- na.omit(variety$country[variety$nfc == "non-stationarity"])
 df %>%
 dplyr::select(Country, Year, DV_nfc_lsplus, DV_nfc_lsplus_lag1,
-              IV_lendingplus, IV_gov_expplus, IV_trade_balanceplus, IV_fdi_outflowplus, IV_giniplus,
+              IV_lendingplus, IV_gov_expplus, IV_trade_balanceplus, IV_fdi_outflowplus, IV_wginiplus,
               IV_lendingplus_lag1, IV_gov_expplus_lag1,
               IV_trade_balanceplus_lag1, IV_fdi_outflowplus_lag1,
-              IV_giniplus_lag1, C_m2plus, C_REERplus, C_cpiplus, C_gdpplus, C_REER, C_gdp, C_cpi) -> nfc
+              IV_wginiplus_lag1, C_m2plus, C_REERplus, C_wgdpplus, C_REER, C_wgdp, C_cpi) -> nfc
 #nfc <- nfc[nfc$Country %in% nfc_country,]
 nfc[is.na(nfc)] <- 0
 aggregate(. ~ Country + Year, data = nfc, sum) -> nfc
@@ -339,11 +350,11 @@ library(lmtest)
 m2  <- plm(DV_nfc_lsplus ~  DV_nfc_lsplus_lag1 + 
                         IV_lendingplus + IV_lendingplus_lag1 + #IV_lendingplus_lag2 + 
                       #  IV_gov_expplus + IV_gov_expplus_lag1 + #IV_gov_expplus_lag2 +
-                        IV_giniplus + IV_giniplus_lag1 + #IV_giniplus_lag2 +           
+                        IV_wginiplus + IV_wginiplus_lag1 + #IV_giniplus_lag2 +           
                         IV_trade_balanceplus + IV_trade_balanceplus_lag1 + #IV_trade_balanceplus_lag2 +                            
                         IV_fdi_outflowplus + IV_fdi_outflowplus_lag1 + #IV_fdi_outflowplus_lag2 +
                         #C_m2plus + C_REERplus + C_gdpplus + C_cpiplus, 
-             C_REER + C_gdp + C_cpi,
+             C_REER + C_wgdp + C_cpi,
           data = nfc, model = 'within',
           effect = 'twoways', index = c('Country', 'Year'))
 summary(m2)
@@ -358,11 +369,11 @@ pdwtest(m2)
 m2_re  <- plm(DV_nfc_lsplus ~  DV_nfc_lsplus_lag1 + 
                         IV_lendingplus + IV_lendingplus_lag1 + #IV_lendingplus_lag2 + 
                        # IV_gov_expplus + IV_gov_expplus_lag1 + #IV_gov_expplus_lag2 +
-                        IV_giniplus +  IV_giniplus_lag1 + #IV_giniplus_lag2 +           
+                        IV_wginiplus +  IV_wginiplus_lag1 + #IV_giniplus_lag2 +           
                         IV_trade_balanceplus + IV_trade_balanceplus_lag1 + #IV_trade_balanceplus_lag2 +    
                         IV_fdi_outflowplus +IV_fdi_outflowplus_lag1 + #IV_fdi_outflowplus_lag2 +
                        # C_m2plus + C_REERplus + C_gdpplus + C_cpiplus, 
-                C_REER + C_gdp + C_cpi,
+                C_REER + C_wgdp + C_cpi,
           data = nfc, model = 'random')
 phtest(m2, m2_re)
 ```
@@ -381,12 +392,12 @@ Get the countries of non-stationarity in DV_nfc_ls as the dataframe for financia
 #hh_country <- na.omit(variety$country[variety$hh == "non-stationarity"])
 df %>%
 dplyr::select(Country, Year, DV_hh_lsplus, DV_hh_lsplus_lag1,
-              IV_lendingplus, IV_gov_expplus, IV_trade_balanceplus, IV_fdi_outflowplus, IV_giniplus,
+              IV_lendingplus, IV_gov_expplus, IV_trade_balanceplus, IV_fdi_outflowplus, IV_wginiplus,
               IV_lendingplus_lag1, IV_gov_expplus_lag1,
               IV_trade_balanceplus_lag1, IV_fdi_outflowplus_lag1,
-              IV_giniplus_lag1,
-              C_m2plus, C_REERplus, C_cpiplus, C_gdpplus,
-              C_REER, C_gdp, C_cpi) -> hh
+              IV_wginiplus_lag1,
+              C_m2plus, C_REERplus, C_wgdpplus,
+              C_REER, C_wgdp, C_cpi) -> hh
 #hh <- hh[hh$Country %in% hh_country,]
 hh[is.na(hh)] <- 0
 aggregate(. ~ Country + Year, data = hh, sum) -> hh
@@ -418,11 +429,11 @@ library(lmtest)
 m3  <- plm(DV_hh_lsplus ~  DV_hh_lsplus_lag1 + 
                         IV_lendingplus + IV_lendingplus_lag1 + #IV_lendingplus_lag2 + 
                       #  IV_gov_expplus + IV_gov_expplus_lag1 + #IV_gov_expplus_lag2 +
-                        IV_giniplus + IV_giniplus_lag1 + #IV_giniplus_lag2 +           
+                        IV_wginiplus + IV_wginiplus_lag1 + #IV_giniplus_lag2 +           
                         IV_trade_balanceplus + IV_trade_balanceplus_lag1 + #IV_trade_balanceplus_lag2 +                            
                         IV_fdi_outflowplus + IV_fdi_outflowplus_lag1 + #IV_fdi_outflowplus_lag2 +
                         #C_m2plus + C_REERplus + C_gdpplus + C_cpiplus, 
-             C_REER + C_gdp + C_cpi,
+             C_REER + C_wgdp + C_cpi,
           data = hh, model = 'within',
           effect = 'twoways', index = c('Country', 'Year'))
 summary(m3)
@@ -437,11 +448,11 @@ pdwtest(m3)
 m3_re  <- plm(DV_hh_lsplus ~  DV_hh_lsplus_lag1 + 
                         IV_lendingplus + IV_lendingplus_lag1 + #IV_lendingplus_lag2 + 
                        # IV_gov_expplus + IV_gov_expplus_lag1 + #IV_gov_expplus_lag2 +
-                        IV_giniplus +  IV_giniplus_lag1 + #IV_giniplus_lag2 +           
+                        IV_wginiplus +  IV_wginiplus_lag1 + #IV_giniplus_lag2 +           
                         IV_trade_balanceplus + IV_trade_balanceplus_lag1 + #IV_trade_balanceplus_lag2 +    
                         IV_fdi_outflowplus +IV_fdi_outflowplus_lag1 + #IV_fdi_outflowplus_lag2 +
                         #C_m2plus + C_REERplus + C_gdpplus + C_cpiplus, 
-                C_REER + C_gdp + C_cpi,
+                C_REER + C_wgdp + C_cpi,
           data = hh, model = 'random')
 phtest(m3, m3_re)
 ```
