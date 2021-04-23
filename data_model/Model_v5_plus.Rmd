@@ -22,6 +22,7 @@ df$X <- NULL
 df <- df %>%
       filter(Year >= 1960) 
 colnames(df)
+df$IV_fdi_net[df$IV_fdi_net==0] <- NA
 ```
 
 Then create lagged variables and _pc variables.<br/>
@@ -53,6 +54,16 @@ df <- df %>%
   mutate(IV_wgini_pc = (IV_wgini-IV_wgini_lag1)/IV_wgini_lag1*100) %>%
   mutate(IV_wgini_pc_lag1 = dplyr::lag(IV_wgini_pc,k=1)) %>%
   mutate(IV_wgini_pc_lag2 = dplyr::lag(IV_wgini_pc,k=2)) %>%
+  ungroup()
+```
+
+```{r}
+df <- df %>%
+  group_by(Country) %>%
+  mutate(IV_fdi_net_lag1 = dplyr::lag(IV_fdi_net,k=1)) %>%
+  mutate(IV_fdi_net_pc = (IV_fdi_net-IV_fdi_net_lag1)/IV_fdi_net_lag1*100) %>%
+  mutate(IV_fdi_net_pc_lag1 = dplyr::lag(IV_fdi_net_pc,k=1)) %>%
+  mutate(IV_fdi_net_pc_lag2 = dplyr::lag(IV_fdi_net_pc,k=2)) %>%
   ungroup()
 ```
 
@@ -242,7 +253,8 @@ govexp_padf <- padf(df, "IV_gov_exp_pc")
 gini_padf <- padf(df, "IV_gini_pc")
 wgini_padf <- padf(df, "IV_wgini_pc")
 trade_balance_padf <- padf(df, "IV_trade_balance_pc")
-fdi_outflow_padf <- padf(df, "IV_fdi_outflow_pc")
+#fdi_outflow_padf <- padf(df, "IV_fdi_outflow_pc")
+fdi_net_padf <- padf(df, "IV_fdi_net_pc")
 ```
 
 ### 2.1 sub-database
@@ -253,9 +265,9 @@ Get the countries of non-stationarity in DV_VA as the dataframe for financializa
 
 df %>%
 dplyr::select(Country, Year, DV_VA_pc, DV_VA_pc_lag1,
-              IV_lending_pc, IV_gov_exp_pc, IV_trade_balance_pc, IV_fdi_outflow_pc, IV_wgini_pc,
+              IV_lending_pc, IV_gov_exp_pc, IV_trade_balance_pc, IV_fdi_net_pc, IV_wgini_pc,
               IV_lending_pc_lag1, IV_gov_exp_pc_lag1,
-              IV_trade_balance_pc_lag1, IV_fdi_outflow_pc_lag1,
+              IV_trade_balance_pc_lag1, IV_fdi_net_pc_lag1,
               IV_wgini_pc_lag1, C_REER, C_wgdp, C_cpi,
               C_M2, C_REER, C_wgdp) -> va
 #va[va$Country %in% VA_country,] -> va
@@ -272,7 +284,7 @@ library(tseries)
 po.test(as.matrix(cbind(va$DV_VA_pc, va$IV_lending_pc), demean=FALSE))
 #po.test(as.matrix(cbind(va$DV_VA_pc, va$IV_gov_exp_pc), demean=FALSE))
 po.test(as.matrix(cbind(va$DV_VA_pc, va$IV_trade_balance_pc), demean=FALSE))
-po.test(as.matrix(cbind(va$DV_VA_pc, va$IV_fdi_outflow_pc), demean=FALSE))
+po.test(as.matrix(cbind(va$DV_VA_pc, va$IV_fdi_net_pc), demean=FALSE))
 po.test(as.matrix(cbind(va$DV_VA_pc, va$IV_wgini_pc), demean=FALSE))
 ```
 
@@ -296,11 +308,11 @@ library(lmtest)
 
 # m1 is an FE model
 m1  <- plm(DV_VA_pc ~  DV_VA_pc_lag1 + 
-                        IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
- #                       IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
+ #                       IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
+                        IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
                         IV_wgini_pc + IV_wgini_pc_lag1 + #IV_gini_pc_lag2 +           
                         IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
-                        IV_fdi_outflow_pc + IV_fdi_outflow_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
+                        IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
                         #C_m2_pc + 
    C_REER + C_wgdp + C_cpi, 
           data = va, model = 'within',
@@ -315,12 +327,12 @@ pdwtest(m1)
 
 # m1_re is a RE model
 m1_re  <- plm(DV_VA_pc ~  DV_VA_pc_lag1 + 
-                        IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
-  #                      IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
-                        IV_wgini_pc +  IV_wgini_pc_lag1 + #IV_gini_pc_lag2 +           
-                        IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +    
-                        IV_fdi_outflow_pc +IV_fdi_outflow_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
-                        #C_m2_pc + C_REER_pc + C_gdp_pc + C_cpi_pc, 
+ #                       IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
+                        IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
+                        IV_wgini_pc + IV_wgini_pc_lag1 + #IV_gini_pc_lag2 +           
+                        IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
+                        IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
+                        #C_m2_pc + 
     C_REER + C_wgdp + C_cpi,
           data = va, model = 'random')
 phtest(m1, m1_re)
@@ -347,9 +359,9 @@ Get the countries of non-stationarity in DV_nfc_ls as the dataframe for financia
 #nfc_country <- na.omit(variety$country[variety$nfc == "non-stationarity"])
 df %>%
 dplyr::select(Country, Year, DV_nfc_ls_pc, DV_nfc_ls_pc_lag1,
-              IV_lending_pc, IV_gov_exp_pc, IV_trade_balance_pc, IV_fdi_outflow_pc, IV_wgini_pc,
+              IV_lending_pc, IV_gov_exp_pc, IV_trade_balance_pc, IV_fdi_net_pc, IV_wgini_pc,
               IV_lending_pc_lag1, IV_gov_exp_pc_lag1,
-              IV_trade_balance_pc_lag1, IV_fdi_outflow_pc_lag1,
+              IV_trade_balance_pc_lag1, IV_fdi_net_pc_lag1,
               IV_wgini_pc_lag1, C_M2, C_REER, C_wgdp, C_cpi) -> nfc
 #nfc <- nfc[nfc$Country %in% nfc_country,]
 nfc[is.na(nfc)] <- 0
@@ -366,7 +378,7 @@ library(tseries)
 po.test(as.matrix(cbind(nfc$DV_nfc_ls_pc, nfc$IV_lending_pc), demean=FALSE))
 #po.test(as.matrix(cbind(nfc$DV_nfc_ls_pc, nfc$IV_gov_exp_pc), demean=FALSE))
 po.test(as.matrix(cbind(nfc$DV_nfc_ls_pc, nfc$IV_trade_balance_pc), demean=FALSE))
-po.test(as.matrix(cbind(nfc$DV_nfc_ls_pc, nfc$IV_fdi_outflow_pc), demean=FALSE))
+po.test(as.matrix(cbind(nfc$DV_nfc_ls_pc, nfc$IV_fdi_net_pc), demean=FALSE))
 po.test(as.matrix(cbind(nfc$DV_nfc_ls_pc, nfc$IV_wgini_pc), demean=FALSE))
 ```
 
@@ -380,11 +392,11 @@ library(lmtest)
 
 # m1 is an FE model
 m2  <- plm(DV_nfc_ls_pc ~  DV_nfc_ls_pc_lag1 + 
-                        IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
-                      #  IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
+                      #  IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
+                        IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
                         IV_wgini_pc + IV_wgini_pc_lag1 + #IV_gini_pc_lag2 +           
                         IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
-                        IV_fdi_outflow_pc + IV_fdi_outflow_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
+                        IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
                         #C_m2_pc + C_REER_pc + C_gdp_pc + C_cpi_pc, 
              C_REER + C_wgdp + C_cpi,
           data = nfc, model = 'within',
@@ -399,11 +411,11 @@ pdwtest(m2)
 
 # m1_re is a RE model
 m2_re  <- plm(DV_nfc_ls_pc ~  DV_nfc_ls_pc_lag1 + 
-                        IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
-                       # IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
+                       # IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
+                        IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
                         IV_wgini_pc +  IV_wgini_pc_lag1 + #IV_gini_pc_lag2 +           
                         IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +    
-                        IV_fdi_outflow_pc +IV_fdi_outflow_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
+                        IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
                        # C_m2_pc + C_REER_pc + C_gdp_pc + C_cpi_pc, 
                 C_REER + C_wgdp + C_cpi,
           data = nfc, model = 'random')
@@ -424,9 +436,9 @@ Get the countries of non-stationarity in DV_nfc_ls as the dataframe for financia
 #hh_country <- na.omit(variety$country[variety$hh == "non-stationarity"])
 df %>%
 dplyr::select(Country, Year, DV_hh_ls_pc, DV_hh_ls_pc_lag1,
-              IV_lending_pc, IV_gov_exp_pc, IV_trade_balance_pc, IV_fdi_outflow_pc, IV_wgini_pc,
+              IV_lending_pc, IV_gov_exp_pc, IV_trade_balance_pc, IV_fdi_net_pc, IV_wgini_pc,
               IV_lending_pc_lag1, IV_gov_exp_pc_lag1,
-              IV_trade_balance_pc_lag1, IV_fdi_outflow_pc_lag1,
+              IV_trade_balance_pc_lag1, IV_fdi_net_pc_lag1,
               IV_wgini_pc_lag1,
               C_REER, C_wgdp, C_cpi) -> hh
 #hh <- hh[hh$Country %in% hh_country,]
@@ -444,7 +456,7 @@ library(tseries)
 po.test(as.matrix(cbind(nfc$DV_nfc_ls_pc, nfc$IV_lending_pc), demean=FALSE))
 #po.test(as.matrix(cbind(nfc$DV_nfc_ls_pc, nfc$IV_gov_exp_pc), demean=FALSE))
 po.test(as.matrix(cbind(nfc$DV_nfc_ls_pc, nfc$IV_trade_balance_pc), demean=FALSE))
-po.test(as.matrix(cbind(nfc$DV_nfc_ls_pc, nfc$IV_fdi_outflow_pc), demean=FALSE))
+po.test(as.matrix(cbind(nfc$DV_nfc_ls_pc, nfc$IV_fdi_net_pc), demean=FALSE))
 po.test(as.matrix(cbind(nfc$DV_nfc_ls_pc, nfc$IV_wgini_pc), demean=FALSE))
 ```
 
@@ -458,11 +470,11 @@ library(lmtest)
 
 # m1 is an FE model
 m3  <- plm(DV_hh_ls_pc ~  DV_hh_ls_pc_lag1 + 
-                        IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
-                      #  IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
+                      #  IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
+                       IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
                         IV_wgini_pc + IV_wgini_pc_lag1 + #IV_gini_pc_lag2 +           
                         IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
-                        IV_fdi_outflow_pc + IV_fdi_outflow_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
+                        IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
                         #C_m2_pc + C_REER_pc + C_gdp_pc + C_cpi_pc, 
              C_REER + C_wgdp + C_cpi,
           data = hh, model = 'within',
@@ -477,11 +489,11 @@ pdwtest(m3)
 
 # m1_re is a RE model
 m3_re  <- plm(DV_hh_ls_pc ~  DV_hh_ls_pc_lag1 + 
-                        IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
-                       # IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
+                       # IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
+                        IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
                         IV_wgini_pc +  IV_wgini_pc_lag1 + #IV_gini_pc_lag2 +           
                         IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +    
-                        IV_fdi_outflow_pc +IV_fdi_outflow_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
+                        IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
                         #C_m2_pc + C_REER_pc + C_gdp_pc + C_cpi_pc, 
                 C_REER + C_wgdp + C_cpi,
           data = hh, model = 'random')
