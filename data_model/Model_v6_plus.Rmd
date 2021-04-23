@@ -1,9 +1,14 @@
 ---
 title: "New Mode _pc & Panel United Root"
 author: "Yimang Zhou & Yuemin Li"
-date: "4/19/2021"
+date: "4/23/2021"
 output: html_document
 ---
+
+- This version update all dependent variables into current dollars.
+- It also change fdi_outflow with fdi_net.
+- Unnecessary steps are deleted.
+
 
 ```{r}
 if (!require("pacman")) install.packages("pacman")
@@ -22,30 +27,12 @@ df$X <- NULL
 df <- df %>%
       filter(Year >= 1960) 
 colnames(df)
-df$IV_fdi_net[df$IV_fdi_net==0] <- NA
+df[df==0] <- NA
+df$Country[duplicated(cbind(df$Country, df$Year))]
+df <- df[!duplicated(cbind(df$Country, df$Year)),]
+df <- df[order(df$Country, df$Year),]
 ```
 
-Then create lagged variables and _pc variables.<br/>
-Here I only have to proceed the variable of IV_gini.
-
-```{r}
-df <- df %>%
-  group_by(Country) %>%
-  mutate(IV_gini_lag1 = dplyr::lag(IV_gini,k=1)) %>%
-  mutate(IV_gini_pc = (IV_gini-IV_gini_lag1)/IV_gini_lag1*100) %>%
-  mutate(IV_gini_pc_lag1 = dplyr::lag(IV_gini_pc,k=1)) %>%
-  mutate(IV_gini_pc_lag2 = dplyr::lag(IV_gini_pc,k=2)) %>%
-  ungroup()
-```
-
-```{r}
-df <- df %>%
-  group_by(Country) %>%
-  mutate(IV_fdi_outflow_lag1 = dplyr::lag(IV_fdi_outflow,k=1)) %>%
-  mutate(IV_fdi_outflow_pc = (IV_fdi_outflow-IV_fdi_outflow_lag1)/IV_fdi_outflow_lag1*100) %>%
-  mutate(IV_fdi_outflow_pc_lag1 = dplyr::lag(IV_fdi_outflow_pc,k=1)) %>%
-  ungroup()
-```
 
 ```{r}
 df <- df %>%
@@ -80,7 +67,6 @@ for(i in 2:length(df)){
 ```
 
 Statistic description 
-It is weird that gdp has a lot of NAs.  
 
 ```{r}
 for(i in 3:length(df)){
@@ -99,7 +85,7 @@ va <- na.omit(va)
 
 ggplot(data=va, aes(y=Year, x = Country)) +
   geom_tile(aes(fill = DV_VA)) +
-  scale_fill_gradient2(midpoint=15,
+  scale_fill_gradient2(midpoint=500000,
                        low="#FFFFFF", mid="#ffb7c5", high = "#FF5576") +
   theme_bw()
 
@@ -114,11 +100,26 @@ nfc <- na.omit(nfc)
 
 ggplot(data=nfc, aes(y=Year, x = Country)) +
   geom_tile(aes(fill = DV_nfc_ls)) +
-  scale_fill_gradient2(midpoint=15,
+  scale_fill_gradient2(midpoint=1e+6,
                        low="#FFFFFF", mid="#ffb7c5", high = "#FF5576") +
   theme_bw()
+
+rm(nfc)
 ```
 
+```{r}
+library(ggplot2)
+hh <- select(df, 
+             Year, Country, DV_hh_ls)
+hh <- na.omit(hh)
+
+ggplot(data=hh, aes(y=Year, x = Country)) +
+  geom_tile(aes(fill = DV_hh_ls)) +
+  scale_fill_gradient2(midpoint=8e+5,
+                       low="#FFFFFF", mid="#ffb7c5", high = "#FF5576") +
+  theme_bw()
+rm(hh)
+```
 
 ## 1. Do the three levels of financialization co-occur and in the US only ? (Hypothesis 1 & 2)
 
@@ -220,13 +221,9 @@ variety <- variety[,c("country", "stationarity.x", "stationarity.y", "stationari
 colnames(variety) <- c("country", "va", "nfc", "hh")
 variety
 ```
-## 2. Explain financialization in the level of the market
-
-Hypothesis 3.1 (Statecraft model): VA increases as governmental spending increases.
-Hypothesis 4.1 (development model): VA increases as fdi inflows
 
 
-### 2.0 panel ADF test
+### 2. panel ADF test
 https://rdrr.io/rforge/punitroots/man/pCADFtest.html
 ```{r}
 p_load(fBasics,fUnitRoots)
@@ -250,45 +247,29 @@ nfc_padf <- padf(df,"DV_nfc_ls_pc")
 hh_padf <- padf(df,"DV_hh_ls_pc")
 lending_padf <- padf(df, "IV_lending_pc")
 govexp_padf <- padf(df, "IV_gov_exp_pc")
-gini_padf <- padf(df, "IV_gini_pc")
 wgini_padf <- padf(df, "IV_wgini_pc")
 trade_balance_padf <- padf(df, "IV_trade_balance_pc")
 #fdi_outflow_padf <- padf(df, "IV_fdi_outflow_pc")
 fdi_net_padf <- padf(df, "IV_fdi_net_pc")
 ```
 
-### 2.1 sub-database
-Get the countries of non-stationarity in DV_VA as the dataframe for financialization at the market level (DV_VA)
+## 3. Explain financialization in the level of the market
 
-```{r}
-#VA_country <- na.omit(variety$country[variety$va == "non-stationarity"])
+Hypothesis 3.1 (Statecraft model): VA increases as governmental spending increases.
+Hypothesis 3.2 (development model): VA increases as fdi inflows
 
-df %>%
-dplyr::select(Country, Year, DV_VA_pc, DV_VA_pc_lag1,
-              IV_lending_pc, IV_gov_exp_pc, IV_trade_balance_pc, IV_fdi_net_pc, IV_wgini_pc,
-              IV_lending_pc_lag1, IV_gov_exp_pc_lag1,
-              IV_trade_balance_pc_lag1, IV_fdi_net_pc_lag1,
-              IV_wgini_pc_lag1, C_REER, C_wgdp, C_cpi,
-              C_M2, C_REER, C_wgdp) -> va
-#va[va$Country %in% VA_country,] -> va
-va[is.na(va)] <- 0
-aggregate(. ~ Country + Year, data = va, sum) -> va
-va[va==0] <- NA
-va <- va[!is.na(va$DV_VA_pc),]
-```
-
-### 2.3 Cointegration: Phillips-Ouliaris test
+### 3.1 Cointegration: Phillips-Ouliaris test for DV_VA_pc
 
 ```{r}
 library(tseries)
-po.test(as.matrix(cbind(va$DV_VA_pc, va$IV_lending_pc), demean=FALSE))
-#po.test(as.matrix(cbind(va$DV_VA_pc, va$IV_gov_exp_pc), demean=FALSE))
-po.test(as.matrix(cbind(va$DV_VA_pc, va$IV_trade_balance_pc), demean=FALSE))
-po.test(as.matrix(cbind(va$DV_VA_pc, va$IV_fdi_net_pc), demean=FALSE))
-po.test(as.matrix(cbind(va$DV_VA_pc, va$IV_wgini_pc), demean=FALSE))
+po.test(as.matrix(cbind(df$DV_VA_pc, df$IV_lending_pc), demean=FALSE))
+po.test(as.matrix(cbind(df$DV_VA_pc, df$IV_gov_exp_pc), demean=FALSE))
+po.test(as.matrix(cbind(df$DV_VA_pc, df$IV_trade_balance_pc), demean=FALSE))
+po.test(as.matrix(cbind(df$DV_VA_pc, df$IV_fdi_net_pc), demean=FALSE))
+po.test(as.matrix(cbind(df$DV_VA_pc, df$IV_wgini_pc), demean=FALSE))
 ```
 
-#### 2.4 FE test and Hausman test for va
+#### 3.2 FE test and Hausman test for DV_VA
 
 Here we use Hausman test to determine whether an FE model or a RE model fit the data better. The null hypothesis is to use the RE model.(No correlation between the unique errors and the regressors in the model). 
 
@@ -298,6 +279,8 @@ Error in swar_Between_check(estm[[2L]], method) :
   model not estimable: 20 coefficient(s) (incl. intercept) to be estimated for the between model but only 11 individual(s)
 
 Hausman test supports null hypothesis. 
+
+The result support Hypothesis 3.1. 
 
 
 ```{r}
@@ -315,7 +298,7 @@ m1  <- plm(DV_VA_pc ~  DV_VA_pc_lag1 +
                         IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
                         #C_m2_pc + 
    C_REER + C_wgdp + C_cpi, 
-          data = va, model = 'within',
+          data = df, model = 'within',
           effect = 'twoways', index = c('Country', 'Year'))
 summary(m1)
 
@@ -334,55 +317,41 @@ m1_re  <- plm(DV_VA_pc ~  DV_VA_pc_lag1 +
                         IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
                         #C_m2_pc + 
     C_REER + C_wgdp + C_cpi,
-          data = va, model = 'random')
+          data = df, model = 'random')
 phtest(m1, m1_re)
 ```
 
 
 
 
-The result supports hypothesis 4.1 
+## 4. Explain financialization in the level of corporate
 
-
-
-
-## 3. Explain financialization in the level of corporate
-
-Hypothesis 3.2 (Statecraft model): nfc increases as governmental spending increases.
+Hypothesis 4.1 (Statecraft model): nfc increases as governmental spending increases.
 Hypothesis 4.2 (development model): nfc increases as fdi inflows
 
-### 3.1 sub-database
-
-Get the countries of non-stationarity in DV_nfc_ls as the dataframe for financialization at the market level
-
-```{r}
-#nfc_country <- na.omit(variety$country[variety$nfc == "non-stationarity"])
-df %>%
-dplyr::select(Country, Year, DV_nfc_ls_pc, DV_nfc_ls_pc_lag1,
-              IV_lending_pc, IV_gov_exp_pc, IV_trade_balance_pc, IV_fdi_net_pc, IV_wgini_pc,
-              IV_lending_pc_lag1, IV_gov_exp_pc_lag1,
-              IV_trade_balance_pc_lag1, IV_fdi_net_pc_lag1,
-              IV_wgini_pc_lag1, C_M2, C_REER, C_wgdp, C_cpi) -> nfc
-#nfc <- nfc[nfc$Country %in% nfc_country,]
-nfc[is.na(nfc)] <- 0
-aggregate(. ~ Country + Year, data = nfc, sum) -> nfc
-nfc[nfc ==0] <- NA
-nfc <- nfc[!is.na(nfc$DV_nfc_ls_pc),]
-#nfc_country
-```
-
-### 3.3 Cointegration: Phillips-Ouliaris test
+### 4.1 Cointegration: Phillips-Ouliaris test
 
 ```{r}
 library(tseries)
-po.test(as.matrix(cbind(nfc$DV_nfc_ls_pc, nfc$IV_lending_pc), demean=FALSE))
-#po.test(as.matrix(cbind(nfc$DV_nfc_ls_pc, nfc$IV_gov_exp_pc), demean=FALSE))
-po.test(as.matrix(cbind(nfc$DV_nfc_ls_pc, nfc$IV_trade_balance_pc), demean=FALSE))
-po.test(as.matrix(cbind(nfc$DV_nfc_ls_pc, nfc$IV_fdi_net_pc), demean=FALSE))
-po.test(as.matrix(cbind(nfc$DV_nfc_ls_pc, nfc$IV_wgini_pc), demean=FALSE))
+po.test(as.matrix(cbind(df$DV_nfc_ls_pc, df$IV_lending_pc), demean=FALSE))
+po.test(as.matrix(cbind(df$DV_nfc_ls_pc, df$IV_gov_exp_pc), demean=FALSE))
+po.test(as.matrix(cbind(df$DV_nfc_ls_pc, df$IV_trade_balance_pc), demean=FALSE))
+po.test(as.matrix(cbind(df$DV_nfc_ls_pc, df$IV_fdi_net_pc), demean=FALSE))
+po.test(as.matrix(cbind(df$DV_nfc_ls_pc, df$IV_wgini_pc), demean=FALSE))
 ```
 
-### 3.4 Hausman Test
+### 4.2 Hausman Test
+
+
+```{r}
+nfc <- df %>%
+  select(IV_gov_exp_pc, IV_gov_exp_pc_lag1,
+         IV_wgini_pc, IV_wgini_pc_lag1,
+         IV_trade_balance_pc, IV_trade_balance_pc_lag1,                       
+         IV_fdi_net_pc, IV_fdi_net_pc_lag1, 
+         C_REER, C_wgdp, C_cpi)
+cor(nfc, method = "pearson", use = "na")
+```
 
 ```{r}
 library(Matrix)
@@ -392,15 +361,15 @@ library(lmtest)
 
 # m1 is an FE model
 m2  <- plm(DV_nfc_ls_pc ~  DV_nfc_ls_pc_lag1 + 
-                      #  IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
-                        IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
-                        IV_wgini_pc + IV_wgini_pc_lag1 + #IV_gini_pc_lag2 +           
-                        IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
-                        IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
-                        #C_m2_pc + C_REER_pc + C_gdp_pc + C_cpi_pc, 
-             C_REER + C_wgdp + C_cpi,
-          data = nfc, model = 'within',
-          effect = 'twoways', index = c('Country', 'Year'))
+                                   IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
+            IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
+             IV_wgini_pc + IV_wgini_pc_lag1 + #IV_gini_pc_lag2 +           
+             IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
+             IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
+             #C_m2_pc + 
+             C_REER + C_wgdp + C_cpi, 
+           data = df, model = 'within',
+           effect = 'twoways', index = c('Country', 'Year'))
 summary(m2)
 
 # PCSE
@@ -411,56 +380,35 @@ pdwtest(m2)
 
 # m1_re is a RE model
 m2_re  <- plm(DV_nfc_ls_pc ~  DV_nfc_ls_pc_lag1 + 
-                       # IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
-                        IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
-                        IV_wgini_pc +  IV_wgini_pc_lag1 + #IV_gini_pc_lag2 +           
-                        IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +    
-                        IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
-                       # C_m2_pc + C_REER_pc + C_gdp_pc + C_cpi_pc, 
-                C_REER + C_wgdp + C_cpi,
-          data = nfc, model = 'random')
+                                  IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
+             IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
+             IV_wgini_pc + IV_wgini_pc_lag1 + #IV_gini_pc_lag2 +           
+             IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
+             IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
+             #C_m2_pc + 
+             C_REER + C_wgdp + C_cpi, 
+           data = df, model = 'random')
 phtest(m2, m2_re)
 ```
 
 
-## 4. Explain financialization in the level of corporate
+## 5. Explain financialization in the level of corporate
 
 Hypothesis 3.3 (Statecraft model): hh increases as governmental spending increases.
 Hypothesis 4.3 (development model): hh increases as fdi inflows
 
-### 4.1 sub-database
-
-Get the countries of non-stationarity in DV_nfc_ls as the dataframe for financialization at the market 
-
-```{r}
-#hh_country <- na.omit(variety$country[variety$hh == "non-stationarity"])
-df %>%
-dplyr::select(Country, Year, DV_hh_ls_pc, DV_hh_ls_pc_lag1,
-              IV_lending_pc, IV_gov_exp_pc, IV_trade_balance_pc, IV_fdi_net_pc, IV_wgini_pc,
-              IV_lending_pc_lag1, IV_gov_exp_pc_lag1,
-              IV_trade_balance_pc_lag1, IV_fdi_net_pc_lag1,
-              IV_wgini_pc_lag1,
-              C_REER, C_wgdp, C_cpi) -> hh
-#hh <- hh[hh$Country %in% hh_country,]
-hh[is.na(hh)] <- 0
-aggregate(. ~ Country + Year, data = hh, sum) -> hh
-hh[hh ==0] <- NA
-hh <- hh[!is.na(hh$DV_hh_ls_pc),]
-#hh_country
-```
-
-### 4.3 Cointegration: Phillips-Ouliaris test
+### 5.1 Cointegration: Phillips-Ouliaris test
 
 ```{r}
 library(tseries)
-po.test(as.matrix(cbind(nfc$DV_nfc_ls_pc, nfc$IV_lending_pc), demean=FALSE))
-#po.test(as.matrix(cbind(nfc$DV_nfc_ls_pc, nfc$IV_gov_exp_pc), demean=FALSE))
-po.test(as.matrix(cbind(nfc$DV_nfc_ls_pc, nfc$IV_trade_balance_pc), demean=FALSE))
-po.test(as.matrix(cbind(nfc$DV_nfc_ls_pc, nfc$IV_fdi_net_pc), demean=FALSE))
-po.test(as.matrix(cbind(nfc$DV_nfc_ls_pc, nfc$IV_wgini_pc), demean=FALSE))
+po.test(as.matrix(cbind(df$DV_hh_ls_pc, df$IV_lending_pc), demean=FALSE))
+po.test(as.matrix(cbind(df$DV_hh_ls_pc, df$IV_gov_exp_pc), demean=FALSE))
+po.test(as.matrix(cbind(df$DV_hh_ls_pc, df$IV_trade_balance_pc), demean=FALSE))
+po.test(as.matrix(cbind(df$DV_hh_ls_pc, df$IV_fdi_net_pc), demean=FALSE))
+po.test(as.matrix(cbind(df$DV_hh_ls_pc, df$IV_wgini_pc), demean=FALSE))
 ```
 
-### 4.4 Hausman Test
+### 5.2 Hausman Test
 
 ```{r}
 library(Matrix)
@@ -470,14 +418,14 @@ library(lmtest)
 
 # m1 is an FE model
 m3  <- plm(DV_hh_ls_pc ~  DV_hh_ls_pc_lag1 + 
-                      #  IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
+                       IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
                        IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
                         IV_wgini_pc + IV_wgini_pc_lag1 + #IV_gini_pc_lag2 +           
                         IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
                         IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
                         #C_m2_pc + C_REER_pc + C_gdp_pc + C_cpi_pc, 
              C_REER + C_wgdp + C_cpi,
-          data = hh, model = 'within',
+          data = df, model = 'within',
           effect = 'twoways', index = c('Country', 'Year'))
 summary(m3)
 
@@ -489,14 +437,14 @@ pdwtest(m3)
 
 # m1_re is a RE model
 m3_re  <- plm(DV_hh_ls_pc ~  DV_hh_ls_pc_lag1 + 
-                       # IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
+                        IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
                         IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
                         IV_wgini_pc +  IV_wgini_pc_lag1 + #IV_gini_pc_lag2 +           
                         IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +    
                         IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
                         #C_m2_pc + C_REER_pc + C_gdp_pc + C_cpi_pc, 
                 C_REER + C_wgdp + C_cpi,
-          data = hh, model = 'random')
+          data = df, model = 'random')
 phtest(m3, m3_re)
 ```
            
