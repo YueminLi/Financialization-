@@ -337,7 +337,7 @@ m1_re  <- plm(DV_VA._pc ~  DV_VA._pc_lag1 +
                         IV_gov_exp._pc + IV_gov_exp._pc_lag1 + #IV_gov_exp_pc_lag2 +
                         IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
                         IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
-                        C_REER + C_wgdp + C_cpi,,
+                        C_REER + C_wgdp + C_cpi,
           data = df, model = 'random')
 phtest(m1, m1_re)
 ```
@@ -372,7 +372,7 @@ m1_re  <- plm(DV_VA._pc ~  DV_VA._pc_lag1 +
                         IV_gov_exp._pc + IV_gov_exp._pc_lag1 + #IV_gov_exp_pc_lag2 +
                         IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
                         IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
-                C_REER + C_wgdp + C_cpi,,
+                C_REER + C_wgdp + C_cpi,
           data = df, model = 'random')
 phtest(m1, m1_re)
 ```
