@@ -237,7 +237,7 @@ nfc_padf <- padf(df,"DV_nfc_ls_pc")
 hh_padf <- padf(df,"DV_hh_ls_pc")
 lending_padf <- padf(df, "IV_lending_pc")
 govexp_padf <- padf(df, "IV_gov_exp_pc")
-wgini_padf <- padf(df, "IV_wgini_pc")
+#wgini_padf <- padf(df, "IV_wgini_pc")
 trade_balance_padf <- padf(df, "IV_trade_balance_pc")
 #fdi_outflow_padf <- padf(df, "IV_fdi_outflow_pc")
 fdi_net_padf <- padf(df, "IV_fdi_net_pc")
@@ -256,7 +256,7 @@ po.test(as.matrix(cbind(df$DV_VA_pc, df$IV_lending_pc), demean=FALSE))
 po.test(as.matrix(cbind(df$DV_VA_pc, df$IV_gov_exp_pc), demean=FALSE))
 po.test(as.matrix(cbind(df$DV_VA_pc, df$IV_trade_balance_pc), demean=FALSE))
 po.test(as.matrix(cbind(df$DV_VA_pc, df$IV_fdi_net_pc), demean=FALSE))
-po.test(as.matrix(cbind(df$DV_VA_pc, df$IV_wgini_pc), demean=FALSE))
+#po.test(as.matrix(cbind(df$DV_VA_pc, df$IV_wgini_pc), demean=FALSE))
 ```
 
 #### 3.2 FE test and Hausman test for DV_VA
@@ -305,6 +305,12 @@ m1_re  <- plm(DV_VA_pc ~  DV_VA_pc_lag1 +
                         C_REER + C_wgdp + C_cpi,
           data = df, model = 'random')
 phtest(m1, m1_re)
+```
+
+check the countries included in the fitted model
+```{r}
+fit <- fitted(m1)
+fit
 ```
 
 % of GDP
