@@ -57,7 +57,7 @@ f1 %>%
   theme_bw()  +
   theme(axis.text.y = element_markdown()) +
   xlab("Year") + 
-  ylab("Values Added in Financial Activities") +  
+  ylab("Values Added in Financial Activities (log)") +  
   labs(fill = "") -> figure1a
 
 f1 %>%
@@ -74,7 +74,7 @@ f1 %>%
   theme_bw()  +
   theme(axis.text.y = element_markdown()) + 
   xlab("Year") + 
-  ylab("Nonfinancial Corporate Debts ") +  
+  ylab("Nonfinancial Corporate Debts (log)") +  
   labs(fill = "") -> figure1b
 
 
@@ -93,7 +93,7 @@ f1 %>%
   theme_bw()  +
   theme(axis.text.y = element_markdown()) + 
   xlab("Year") + 
-  ylab("Household Debts") +  
+  ylab("Household Debts (log)") +  
   labs(fill = "") -> figure1c
 
 
