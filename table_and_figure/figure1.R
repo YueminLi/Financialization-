@@ -1,7 +1,7 @@
 library(pacman)
 p_load(ggpubr, ggtext, tidyverse)
-setwd("~/Downloads/GitHub/Hegemony_Pitfall_or_Statecraft_Toolkit")
-df <- read.csv("./data_processing/financialization_df.csv")
+#setwd("~/Downloads/GitHub/Hegemony_Pitfall_or_Statecraft_Toolkit")
+df <- read.csv("../data_processing/financialization_df.csv")
 df$X <- NULL
 df <- df %>%
   filter(Year >= 1960) 
@@ -101,7 +101,18 @@ f1 %>%
 ggarrange(figure1a, figure1b, figure1c, 
           #labels = c("", "", ""),
           ncol = 3, nrow = 1,
-          legend = "bottom")
+          legend = "bottom") -> figure1
 
+
+ggsave(
+  "figure1.png",
+  plot = last_plot(),
+  device = NULL,
+  path = "../table_and_figure",
+  scale = 1,
+  width = 14.50,
+  height = 8,
+  units = c("in", "cm", "mm"),
+  dpi = 320)
 
 

@@ -67,6 +67,8 @@ print(result)
 
 A graph to describe the distributions of the three DV across the countries.
 
+
+
 ```{r}
 library(ggplot2)
 va <- select(df, 
@@ -223,6 +225,20 @@ if (!require("CADFtest"))install.packages("CADFtest")
 library(punitroots)
 ```
 
+First we create the databases consistent with those used in the models. There are 31 countries.
+
+```{r}
+model_country <- c("Australia", "Austria", "Belgium", "Brazil", "Canada",
+                   "Chile", "China", "Denmark", "Finland", "France",
+                   "Germany", "Greece", "Hungary", "Iceland", "Ireland",
+                   "Israel","Italy", "Japan", "Korea", "Mexico",
+                   "Netherlands", "New Zealand", "Norway", "Poland", "Portugal",
+                   "Spain", "Sweden", "Switzerland", "Turkey", "United Kingdom",
+                   "United States")
+df_model <- df[df$Country %in% model_country,]
+```
+
+The ADF tests on the variables are based on the df_model data becasue obs included in the three models are different from each other.
 ```{r}
 padf <- function(df, x){
   df %>%
@@ -232,13 +248,39 @@ padf <- function(df, x){
   print(result)
 }
 
-VA_padf <- padf(df,"DV_VA_pc")
+VA_padf <- padf(df,"DV_VA_pc") 
 nfc_padf <- padf(df,"DV_nfc_ls_pc")
 hh_padf <- padf(df,"DV_hh_ls_pc")
 lending_padf <- padf(df, "IV_lending_pc")
 govexp_padf <- padf(df, "IV_gov_exp_pc")
 trade_balance_padf <- padf(df, "IV_trade_balance_pc")
 fdi_net_padf <- padf(df, "IV_fdi_net_pc")
+
+rbind(as.numeric(VA_padf[1]), as.numeric(nfc_padf[1]), as.numeric(hh_padf[1]),
+      as.numeric(lending_padf[1]), as.numeric(govexp_padf[1]), as.numeric(trade_balance_padf[1]),
+      as.numeric(fdi_net_padf[1])) -> ADF_statistics
+
+rbind(as.numeric(VA_padf[4]), as.numeric(nfc_padf[4]), as.numeric(hh_padf[4]),
+      as.numeric(lending_padf[4]), as.numeric(govexp_padf[4]), as.numeric(trade_balance_padf[4]),
+      as.numeric(fdi_net_padf[4])) -> P_value
+
+variable <- c("Values added in financial activities", "Nonfinancial corporate debts", "Household debts",
+              "Government net lending", "Government expenditure", "Net trade balance", "FDI net outflow")
+padf_table <- data.frame(cbind(variable, ADF_statistics, P_value))
+colnames(padf_table) <- c("Variable", "ADF_statistics", "P_value")
+write.csv(padf_table, "../table_and_figure/padf_table.csv")
+```
+
+Then We use the database for correlations between variables.
+
+```{r}
+cor_df <- df_model %>%
+  select(DV_VA_pc,DV_nfc_ls_pc,DV_hh_ls_pc,
+         IV_lending_pc, IV_gov_exp_pc,IV_trade_balance_pc,IV_fdi_net_pc)
+cor_mat <- cor(cor_df, use = 'na')
+cor_mat[upper.tri(cor_mat)] <- NA
+cor_mat
+write.csv(cor_mat, '../table_and_figure/cor_mat.csv')
 ```
 
 ## 3. Explain financialization in the level of the market
@@ -246,14 +288,35 @@ fdi_net_padf <- padf(df, "IV_fdi_net_pc")
 Hypothesis 3.1 (Statecraft model): VA increases as governmental spending increases.
 Hypothesis 3.2 (development model): VA increases as fdi inflows
 
+## 3.0 Database and descriptive statistics
+
+This part produces a database identical to the model for 3.1 and other uses.
+
+```{r}
+va_df <- df_model %>%
+  select(DV_VA_pc,DV_VA_pc_lag1, 
+          IV_lending_pc, IV_lending_pc_lag1,
+          IV_gov_exp_pc, IV_gov_exp_pc_lag1,
+          IV_trade_balance_pc, IV_trade_balance_pc_lag1,                           
+          IV_fdi_net_pc, IV_fdi_net_pc_lag1,
+          C_REER, C_wgdp, C_cpi, C_wgini,
+         Country, Year)
+va_df <- na.omit(va_df)
+```
+
 ### 3.1 Cointegration: Phillips-Ouliaris test for DV_VA_pc
 
 ```{r}
 library(tseries)
-po.test(as.matrix(cbind(df$DV_VA_pc, df$IV_lending_pc), demean=FALSE))
-po.test(as.matrix(cbind(df$DV_VA_pc, df$IV_gov_exp_pc), demean=FALSE))
-po.test(as.matrix(cbind(df$DV_VA_pc, df$IV_trade_balance_pc), demean=FALSE))
-po.test(as.matrix(cbind(df$DV_VA_pc, df$IV_fdi_net_pc), demean=FALSE))
+po.test(as.matrix(cbind(va_df$DV_VA_pc, va_df$IV_lending_pc), demean=FALSE)) -> po_va_lending
+po.test(as.matrix(cbind(va_df$DV_VA_pc, va_df$IV_gov_exp_pc), demean=FALSE)) -> po_va_exp
+po.test(as.matrix(cbind(va_df$DV_VA_pc, va_df$IV_trade_balance_pc), demean=FALSE)) -> po_va_trade
+po.test(as.matrix(cbind(va_df$DV_VA_pc, va_df$IV_fdi_net_pc), demean=FALSE)) -> po_va_fdi
+
+po_va <- rbind(as.numeric(po_va_lending[1]), as.numeric(po_va_exp[1]), 
+               as.numeric(po_va_trade[1]), as.numeric(po_va_fdi[1]))
+po_va
+
 ```
 
 #### 3.2 FE test and Hausman test for DV_VA
@@ -384,15 +447,36 @@ phtest(m1, m1_re)
 Hypothesis 4.1 (Statecraft model): nfc increases as governmental spending increases.
 Hypothesis 4.2 (development model): nfc increases as fdi inflows
 
+## 4.0 Database and descriptive statistics
+
+This part produces a database identical to the model for 4.1 and other uses.
+
+```{r}
+nfc_df <- df_model %>%
+  select(DV_nfc_ls_pc,DV_nfc_ls_pc_lag1, 
+          IV_lending_pc, IV_lending_pc_lag1,
+          IV_gov_exp_pc, IV_gov_exp_pc_lag1,
+          IV_trade_balance_pc, IV_trade_balance_pc_lag1,                           
+          IV_fdi_net_pc, IV_fdi_net_pc_lag1,
+          C_REER, C_wgdp, C_cpi, C_wgini,
+          Country, Year)
+nfc_df <- na.omit(nfc_df)
+```
+
 ### 4.1 Cointegration: Phillips-Ouliaris test
 
 ```{r}
 library(tseries)
-po.test(as.matrix(cbind(df$DV_nfc_ls_pc, df$IV_lending_pc), demean=FALSE))
-po.test(as.matrix(cbind(df$DV_nfc_ls_pc, df$IV_gov_exp_pc), demean=FALSE))
-po.test(as.matrix(cbind(df$DV_nfc_ls_pc, df$IV_trade_balance_pc), demean=FALSE))
-po.test(as.matrix(cbind(df$DV_nfc_ls_pc, df$IV_fdi_net_pc), demean=FALSE))
-po.test(as.matrix(cbind(df$DV_nfc_ls_pc, df$IV_wgini_pc), demean=FALSE))
+po.test(as.matrix(cbind(nfc_df$DV_nfc_ls_pc, nfc_df$IV_lending_pc), demean=FALSE)) -> po_nfc_lending
+po.test(as.matrix(cbind(nfc_df$DV_nfc_ls_pc, nfc_df$IV_gov_exp_pc), demean=FALSE)) -> po_nfc_exp
+po.test(as.matrix(cbind(nfc_df$DV_nfc_ls_pc, nfc_df$IV_trade_balance_pc), demean=FALSE)) -> po_nfc_trade
+po.test(as.matrix(cbind(nfc_df$DV_nfc_ls_pc, nfc_df$IV_fdi_net_pc), demean=FALSE)) -> po_nfc_fdi
+#po.test(as.matrix(cbind(nfc_df$DV_nfc_ls_pc, nfc_df$IV_wgini_pc), demean=FALSE))
+
+po_nfc <- rbind(as.numeric(po_nfc_lending[1]), as.numeric(po_nfc_exp[1]), 
+               as.numeric(po_nfc_trade[1]), as.numeric(po_nfc_fdi[1]))
+
+po_nfc
 ```
 
 ### 4.2 Hausman Test
@@ -482,15 +566,35 @@ phtest(m2, m2_re)
 Hypothesis 3.3 (Statecraft model): hh increases as governmental spending increases.
 Hypothesis 4.3 (development model): hh increases as fdi inflows
 
+## 5.0 Database and descriptive statistics
+
+This part produces a database identical to the model for 5.1 and other uses.
+
+```{r}
+hh_df <- df_model %>%
+  select(DV_hh_ls_pc,DV_hh_ls_pc_lag1, 
+          IV_lending_pc, IV_lending_pc_lag1,
+          IV_gov_exp_pc, IV_gov_exp_pc_lag1,
+          IV_trade_balance_pc, IV_trade_balance_pc_lag1,                           
+          IV_fdi_net_pc, IV_fdi_net_pc_lag1,
+          C_REER, C_wgdp, C_cpi, C_wgini,
+          Country, Year)
+hh_df <- na.omit(hh_df)
+```
+
 ### 5.1 Cointegration: Phillips-Ouliaris test
 
 ```{r}
 library(tseries)
-po.test(as.matrix(cbind(df$DV_hh_ls_pc, df$IV_lending_pc), demean=FALSE))
-po.test(as.matrix(cbind(df$DV_hh_ls_pc, df$IV_gov_exp_pc), demean=FALSE))
-po.test(as.matrix(cbind(df$DV_hh_ls_pc, df$IV_trade_balance_pc), demean=FALSE))
-po.test(as.matrix(cbind(df$DV_hh_ls_pc, df$IV_fdi_net_pc), demean=FALSE))
-po.test(as.matrix(cbind(df$DV_hh_ls_pc, df$IV_wgini_pc), demean=FALSE))
+po.test(as.matrix(cbind(hh_df$DV_hh_ls_pc, hh_df$IV_lending_pc), demean=FALSE)) -> po_hh_lending
+po.test(as.matrix(cbind(hh_df$DV_hh_ls_pc, hh_df$IV_gov_exp_pc), demean=FALSE)) -> po_hh_exp
+po.test(as.matrix(cbind(hh_df$DV_hh_ls_pc, hh_df$IV_trade_balance_pc), demean=FALSE)) -> po_hh_trade
+po.test(as.matrix(cbind(hh_df$DV_hh_ls_pc, hh_df$IV_fdi_net_pc), demean=FALSE)) -> po_hh_fdi
+
+po_hh <- rbind(as.numeric(po_hh_lending[1]), as.numeric(po_hh_exp[1]), 
+               as.numeric(po_hh_trade[1]), as.numeric(po_hh_fdi[1]))
+
+po_hh
 ```
 
 ### 5.2 Hausman Test
@@ -563,4 +667,20 @@ m3_re  <- plm(DV_hh_ls._pc ~  DV_hh_ls._pc_lag1 +
                 C_REER + C_wgdp + C_cpi,
           data = df, model = 'random')
 phtest(m3, m3_re)
+```
+
+# 6. Figure and Table
+
+Create a report table for Phillips-Ouliaris Test for Co-integration
+
+```{r}
+po <- cbind (po =c("Government net lending", "Government expenditure", "Net trade balance", "FDI net outflow"),
+             va = po_va,
+             nfc = po_nfc,             
+             hh = po_hh)
+             
+colnames(po) <- c("po","va", "nfc", "hh")
+
+write.csv(po, "../table_and_figure/po.csv")
+
 ```
