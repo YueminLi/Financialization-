@@ -45,7 +45,7 @@ f1$hhlogic <- f1$hh == "non-stationarity"
 
 f1 %>%
   mutate(va.label = paste0("<span style = 'color: ",
-                         ifelse(valogic==TRUE, "#de425b", "#488f31"),  # #488f31 is green, #de425b is red
+                         ifelse(nfclogic==TRUE, "#131516", "#A8AFB3"),  # #131516 is darker, #A8AFB3 is lighter
                          ";'>",
                          Country,
                          "</span>", sep = "") ,
@@ -62,7 +62,7 @@ f1 %>%
 
 f1 %>%
   mutate(nfc.label = paste0("<span style = 'color: ",
-                           ifelse(nfclogic==TRUE, "#de425b", "#488f31"),  # #488f31 is green, #de425b is red
+                            ifelse(hhlogic==TRUE, "#131516", "#A8AFB3"),  # #131516 is darker, #A8AFB3 is lighter
                            ";'>",
                            Country,
                            "</span>", sep = "") ,
@@ -81,7 +81,7 @@ f1 %>%
 
 f1 %>%
   mutate(hh.label = paste0("<span style = 'color: ",
-                            ifelse(hhlogic==TRUE, "#de425b", "#488f31"),  # #488f31 is green, #de425b is red
+                           ifelse(valogic==TRUE, "#131516", "#A8AFB3"),   # #131516 is darker, #A8AFB3 is lighter
                             ";'>",
                             Country,
                             "</span>", sep = "") ,
