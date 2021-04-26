@@ -71,7 +71,7 @@ kable(t1,  "pipe",
       digits = 2, booktabs = T,
       caption = "Augmented Dickey-Fuller Test for Unit Root",
       col.names = rep(c("Variable", "ADF Statistics",
-                        "Values added in financial activities", "Nonfinancial corporate debts", "Household debts",
+                        "Values added in finance activities", "Nonfinancial corporate debts", "Household debts",
                         "Government net lending", "Government expenditure", "Net trade balance", "FDI net outflow"))) 
 
 
@@ -85,9 +85,35 @@ t2$X <- NULL
 kable(t2, "pipe",
       digit = 2, booktabs = T,
       caption = "Phillips-Ouliaris Test for Co-integration", 
-      col.names = rep(c("Phillips-Ouliaris demeaned","Values added in financial activities", 
+      col.names = rep(c("Phillips-Ouliaris demeaned","Values added in finance activities", 
                         "Nonfinancial corporate debts", "Household debts")))
 
+
+```
+
+```{r echo = FALSE, rsult = 'asis'}
+# Table for result
+model <- read.csv("./table_and_figure/model.csv")
+model$X <- NULL
+
+row.names(model) <- c("Intercept", "Dependent variable (lag 1)", 
+                           "Government net lending", "Government net lending (lag 1)",
+                           "Government expenditure", "Government expenditure (lag 1)",
+                           "Net trade balance", "Net trade balance (lag 1)",
+                           "FDI net outflows", "FDI net outflows (lag1)",
+                           "Real Effect Exchange Rates", "GDP", "CPI", "GINI")
+
+
+kbl(model,longtable = T, booktabs = T, digit = 4,
+    caption = "Dynamic Regression Models with Panel-Corrected Standard Errors, 1978-2018",
+        col.names = rep(c("Estimate","Std. Error", 
+                           "Estimate","Std. Error", 
+                          "Estimate","Std. Error"))) %>%
+   add_header_above(c("","M1: Values added" = 2, "M2: NFC debts" = 2, "M3: Household debts" = 2)) %>%
+   pack_rows("Statecraft contigency", 3, 6) %>%
+   pack_rows("Development pitfall", 7,10) %>%
+   pack_rows("Control variable", 11, 14) %>%
+      kable_styling(latex_options = c("repeat_header")) 
 
 ```
 

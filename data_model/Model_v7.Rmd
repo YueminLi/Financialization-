@@ -421,7 +421,7 @@ m1  <- plm(DV_RVA_pc ~  DV_RVA_pc_lag1 +
                         IV_gov_exp._pc + IV_gov_exp._pc_lag1 + #IV_gov_exp_pc_lag2 +
                         IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
                         IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
-                        C_REER + C_wgdp + C_cpi,
+                        C_REER + C_wgdp + C_cpi + C_wgini,
           data = df, model = 'within',
           effect = 'twoways', index = c('Country', 'Year'))
 summary(m1)
@@ -438,7 +438,7 @@ m1_re  <- plm(DV_VA._pc ~  DV_VA._pc_lag1 +
                         IV_gov_exp._pc + IV_gov_exp._pc_lag1 + #IV_gov_exp_pc_lag2 +
                         IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
                         IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
-                C_REER + C_wgdp + C_cpi,
+                C_REER + C_wgdp + C_cpi + C_wgini,
           data = df, model = 'random')
 phtest(m1, m1_re)
 ```
@@ -674,6 +674,7 @@ phtest(m3, m3_re)
 Create a report table for Phillips-Ouliaris Test for Co-integration
 
 ```{r}
+# po data
 po <- cbind (po =c("Government net lending", "Government expenditure", "Net trade balance", "FDI net outflow"),
              va = po_va,
              nfc = po_nfc,             
@@ -683,4 +684,40 @@ colnames(po) <- c("po","va", "nfc", "hh")
 
 write.csv(po, "../table_and_figure/po.csv")
 
+# model data
+p_load(gtools)
+
+options(scipen = 999)
+m1r <- data.frame(summary(m1)[1])
+m1r <- rbind(c(NA, NA), m1r)
+m1r$star <- stars.pval(m1r[,4])
+m1r[,1] <- format(round(m1r[,1], digit = 4))
+m1r[,1] <- paste(m1r[,1], m1r[,5])
+m1r <- m1r[1:2]
+
+m2r <- data.frame(summary(m2_re)[1])
+m2r$star <- stars.pval(m2r[,4])
+m2r[,1] <- format(round(m2r[,1], digit = 4))
+m2r[,1] <- paste(m2r[,1], m2r[,5])
+m2r <- m2r[1:2]
+
+m3r <- data.frame(summary(m3)[1])
+m3r <- rbind(c(NA, NA), m3r)
+m3r$star <- stars.pval(m3r[,4])
+m3r[,1] <- format(round(m3r[,1], digit = 4))
+m3r[,1] <- paste(m3r[,1], m3r[,5])
+m3r <- m3r[1:2]
+
+# m1r <- data.frame(summary(m1)[1])[c(1:2, 4)]
+# m1r <- rbind(c(NA, NA, NA), m1r)
+# m2r <- data.frame(summary(m2_re)[1])[c(1:2,4)]
+# m3r <- data.frame(summary(m3)[1])[c(1:2,4)]
+# m3r <- rbind(c(NA, NA, NA), m3r)
+# 
+model <- cbind(m1r, m2r, m3r)
+model[1,1] <- ""
+model[1,5] <- ""
+write.csv(model, "../table_and_figure/model.csv")
+
+options(scipen = 0)
 ```
