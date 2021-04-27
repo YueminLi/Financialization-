@@ -1,19 +1,20 @@
 ---
-title: 
-      Statecraft Contingency or Development Pitfall?
-subtitle: 
-      Explaining the Rise of Financialization in a Global Perspective
-author: 
-      - Yuemin Li 
-      - Yimang Zhou"
-date: '`r format(Sys.time(), "%d %B, %Y")`'
-output: pdf_document
+title: "Statecraft Contingency or Development Pitfall?"
+author:
+- Yuemin Li
+- Yimang Zhou
+date: '`r Sys.Date()`'
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+subtitle: Explaining the Rise of Financialization in a Global Perspective
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 if (!require("pacman")) install.packages("pacman"); library(pacman)
-p_load(tidyverse, knitr, kableExtra, rmarkdown, ggplot2)
+p_load(tidyverse, knitr, kableExtra, rmarkdown, ggplot2, modelsummary, gt)
 ```
 
 
@@ -41,7 +42,7 @@ Although financialization has been defined and measured in multiple layers, the 
 
 This requires us to introduce an international perspective in order to discover more patterns of financialization in other countries. While some papers discuss financialization with a global view (e.g., Dore 2008), most existing studies infer financialization as an event exclusively present in the U.S. (e.g., Krippner 2019). Instead of limiting financialization in the U.S., we define financialization as “the persistent and independent growth over an expansive temporal period in at least one dimension below: the size of the financial industry, the speculations of non-financial corporations, or the financial engagement of households.” As financialization may cover more than one social phenomenon, it might be risky to explain financialization with a singular model. We therefore explore the existing explanation of financialization (mainly in the U.S., though) and develop them into two general models to explain financialization at the national level. 
 
-#Development Pitfall or Statecraft Contingency
+# Development Pitfall or Statecraft Contingency
 
 The development model has described the rise of financialization as a result of capital rationalization under intensified international competition in the world market (Arrighi 1994, 2007; Brenner 2003). Lenin (1999[1917]) has illustrated this process as “the concentration of production; the monopolies arising therefrom; the merging or coalescence of the banks with industry -- such is the history of the rise of finance capital and such is the content of that concept”. The profit-maximizing feature of capital has an intrinsic tendency to expand relentlessly to grab resources or productive materials with the lowest cost, creating a world market geographically and multinational multi-industries corporations vertically. At the beginning, capital from more developed countries flows out into less developed countries to search for low-priced raw materials, starting to connect with local business in these less developed countries. Next, capital “discovers” lower-cost human resources and establishes factories on the spot, deepening the connections with these countries. Such connections and outflow of capital from more developed countries in search for lower-cost productive materials have strengthened and reinforced the creation of the world-market. At the same time, outflowing capital has utilized the structure of multinational corporations to maximize its profits with tricks including tax avoidance and accounting operations. However, with the establishment of the world market, capital from the less developed countries has started to join into the international competition, reducing the rate of profit for those more developed capital given their higher-cost within their countries. One solution for the capital from more developed countries is diversification, broadening their business into diverse industrial niches to seek for new “markets” with higher rates of profit. When this solution produces a decreasing rate of return to a certain threshold to the extent of the heightened inter-capitalist competition becoming a zero- or negative-sum game, the final resort rests in what Schumpeter calls “headquarters of the capitalist system” -- the money market (Arrighi 2007). 
 
@@ -84,7 +85,7 @@ t2 <- read.csv('./table_and_figure/po.csv')
 t2$X <- NULL
 kable(t2, "pipe",
       digit = 2, booktabs = T,
-      caption = "Phillips-Ouliaris Test for Co-integration", 
+      caption = "Phillips-Ouliaris Test for Co-integration And Correlation", 
       col.names = rep(c("Phillips-Ouliaris demeaned","Values added in finance activities", 
                         "Nonfinancial corporate debts", "Household debts")))
 
@@ -92,28 +93,75 @@ kable(t2, "pipe",
 ```
 
 ```{r echo = FALSE, rsult = 'asis'}
+hausman <- read.csv('./table_and_figure/hausman_test.csv')
+hausman$X <- NULL
+hausman$X.1 <- NULL
+hausman$X.2 <- NULL
+kable(hausman, "pipe",
+      digit = 4, booktabs = T,
+      caption = "Hausman Test",
+      col.names = rep(c("Model", "Chi-square", "P-value", "Result"))
+      )
+```
+
+```{r echo = FALSE, rsult = 'asis'}
+# models <- list()
+# load("./table_and_figure/model.RData")
+# models[['M1: Values added']] <- m1
+# models[['M2: NFC debts']] <- m2_re
+# models[['M3: Household debts']] <- m3
+# 
+# cm <- c("(Intercept)" = "(Intercept)",
+#          'DV_VA_pc_lag1' = "Dependent variable (lag 1)",
+#         'DV_nfc_ls_pc_lag1' = "Dependent variable (lag 1)",
+#         'DV_hh_ls_pc_lag1' = "Dependent variable (lag 1)",
+#         'IV_lending_pc' = "Government net lending",
+#          "IV_lending_pc_lag1" = "Government net lending (lag 1)",
+#         "IV_gov_exp_pc" = "Government expenditure",
+#         "IV_gov_exp_pc_lag1" = "Government expenditure (lag 1)",
+#         "IV_trade_balance_pc" = "Net trade balance",
+#         "IV_trade_balance_pc_lag1" = "Net trade balance (lag 1)",
+#         "C_REER" = "Real Effect Exchange Rates",
+#         "C_wgdp" = "GDP",
+#         "C_cpi" = "CPI",
+#         "C_wgini" = "GINI")
+# 
+# modelsummary(models,
+#          statistics = "std.error",
+#          stars = TRUE,
+#          coef_map = cm,
+#          title = "Dynamic Regression Models with Panel-Corrected Standard Errors, 1978-2018") %>%
+#    pack_rows("Statecraft contigency", 3, 6) %>%
+#    pack_rows("Development pitfall", 7,10) %>%
+#    pack_rows("Control variable", 11, 14)
+
+```
+
+
+```{r echo = FALSE, rsult = 'asis'}
 # Table for result
 model <- read.csv("./table_and_figure/model.csv")
 model$X <- NULL
 
-row.names(model) <- c("Intercept", "Dependent variable (lag 1)", 
+row.names(model) <- c("Intercept", "Dependent variable (lag 1)",
                            "Government net lending", "Government net lending (lag 1)",
                            "Government expenditure", "Government expenditure (lag 1)",
                            "Net trade balance", "Net trade balance (lag 1)",
                            "FDI net outflows", "FDI net outflows (lag1)",
-                           "Real Effect Exchange Rates", "GDP", "CPI", "GINI")
+                           "Real Effect Exchange Rates", "GDP", "CPI", "GINI",
+                      "R-Square", "N")
 
 
 kbl(model,longtable = T, booktabs = T, digit = 4,
     caption = "Dynamic Regression Models with Panel-Corrected Standard Errors, 1978-2018",
-        col.names = rep(c("Estimate","Std. Error", 
-                           "Estimate","Std. Error", 
+        col.names = rep(c("Estimate","Std. Error",
+                           "Estimate","Std. Error",
                           "Estimate","Std. Error"))) %>%
    add_header_above(c("","M1: Values added" = 2, "M2: NFC debts" = 2, "M3: Household debts" = 2)) %>%
    pack_rows("Statecraft contigency", 3, 6) %>%
    pack_rows("Development pitfall", 7,10) %>%
    pack_rows("Control variable", 11, 14) %>%
-      kable_styling(latex_options = c("repeat_header")) 
+      kable_styling(latex_options = c("repeat_header"))
 
 ```
 

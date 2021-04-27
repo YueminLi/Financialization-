@@ -1,0 +1,4 @@
+Models,Chi-square,P-value,Result,,,
+M1,21.937,0.03823,Reject null hypothesis and use fixed-effect model,,,
+M2,15.766,0.262,Cannot reject null hypothesis and use random-effect model,,,
+M3,97.579,0.00000,Reject null hypothesis and use fixed-effect model,,,

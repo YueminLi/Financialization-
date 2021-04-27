@@ -334,11 +334,6 @@ The result support Hypothesis 3.1.
 
 multiple of GDP
 ```{r}
-library(Matrix)
-library(plm)
-library(car)
-library(lmtest)
-
 # m1 is an FE model
 m1  <- plm(DV_VA_pc ~  DV_VA_pc_lag1 + 
                         IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
@@ -375,72 +370,63 @@ fit
 
 % of GDP
 ```{r}
-library(Matrix)
-library(plm)
-library(car)
-library(lmtest)
 
-# m1 is an FE model
-m1  <- plm(DV_VA._pc ~  DV_VA._pc_lag1 + 
-                        IV_lending._pc + IV_lending._pc_lag1 + #IV_lending_pc_lag2 + 
-                        IV_gov_exp._pc + IV_gov_exp._pc_lag1 + #IV_gov_exp_pc_lag2 +
-                        IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
-                        IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
-                        C_REER + C_wgdp + C_cpi,
-          data = df, model = 'within',
-          effect = 'twoways', index = c('Country', 'Year'))
-summary(m1)
-
-# PCSE
-summary(m1, vcovBK)
-
-# Durbin-Watson Statistics
-pdwtest(m1)
-
-# m1_re is a RE model
-m1_re  <- plm(DV_VA._pc ~  DV_VA._pc_lag1 + 
-                        IV_lending._pc + IV_lending._pc_lag1 + #IV_lending_pc_lag2 + 
-                        IV_gov_exp._pc + IV_gov_exp._pc_lag1 + #IV_gov_exp_pc_lag2 +
-                        IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
-                        IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
-                        C_REER + C_wgdp + C_cpi,
-          data = df, model = 'random')
-phtest(m1, m1_re)
+# # m1_p is an FE model
+# m1_p  <- plm(DV_VA._pc ~  DV_VA._pc_lag1 + 
+#                         IV_lending._pc + IV_lending._pc_lag1 + #IV_lending_pc_lag2 + 
+#                         IV_gov_exp._pc + IV_gov_exp._pc_lag1 + #IV_gov_exp_pc_lag2 +
+#                         IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
+#                         IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
+#                         C_REER + C_wgdp + C_cpi,
+#           data = df, model = 'within',
+#           effect = 'twoways', index = c('Country', 'Year'))
+# summary(m1_p)
+# 
+# # PCSE
+# summary(m1_p, vcovBK)
+# 
+# # Durbin-Watson Statistics
+# pdwtest(m1_p)
+# 
+# # m1_p_re is a RE model
+# m1_re_p  <- plm(DV_VA._pc ~  DV_VA._pc_lag1 + 
+#                         IV_lending._pc + IV_lending._pc_lag1 + #IV_lending_pc_lag2 + 
+#                         IV_gov_exp._pc + IV_gov_exp._pc_lag1 + #IV_gov_exp_pc_lag2 +
+#                         IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
+#                         IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
+#                         C_REER + C_wgdp + C_cpi,
+#           data = df, model = 'random')
+# phtest(m1_p, m1_re_p)
 ```
 
 Real value added
 ```{r}
-library(Matrix)
-library(plm)
-library(car)
-library(lmtest)
-
-# m1 is an FE model
-m1  <- plm(DV_RVA_pc ~  DV_RVA_pc_lag1 + 
-                        IV_lending._pc + IV_lending._pc_lag1 + #IV_lending_pc_lag2 + 
-                        IV_gov_exp._pc + IV_gov_exp._pc_lag1 + #IV_gov_exp_pc_lag2 +
-                        IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
-                        IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
-                        C_REER + C_wgdp + C_cpi + C_wgini,
-          data = df, model = 'within',
-          effect = 'twoways', index = c('Country', 'Year'))
-summary(m1)
-
-# PCSE
-summary(m1, vcovBK)
-
-# Durbin-Watson Statistics
-pdwtest(m1)
-
-# m1_re is a RE model
-m1_re  <- plm(DV_VA._pc ~  DV_VA._pc_lag1 + 
-                        IV_lending._pc + IV_lending._pc_lag1 + #IV_lending_pc_lag2 + 
-                        IV_gov_exp._pc + IV_gov_exp._pc_lag1 + #IV_gov_exp_pc_lag2 +
-                        IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
-                        IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
-                C_REER + C_wgdp + C_cpi + C_wgini,
-          data = df, model = 'random')
-phtest(m1, m1_re)
+# # m1 is an FE model
+# m1_r  <- plm(DV_RVA_pc ~  DV_RVA_pc_lag1 + 
+#                         IV_lending._pc + IV_lending._pc_lag1 + #IV_lending_pc_lag2 + 
+#                         IV_gov_exp._pc + IV_gov_exp._pc_lag1 + #IV_gov_exp_pc_lag2 +
+#                         IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
+#                         IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
+#                         C_REER + C_wgdp + C_cpi + C_wgini,
+#           data = df, model = 'within',
+#           effect = 'twoways', index = c('Country', 'Year'))
+# summary(m1_r)
+# 
+# # PCSE
+# summary(m1_r, vcovBK)
+# 
+# # Durbin-Watson Statistics
+# pdwtest(m1_r)
+# 
+# # m1_re_r is a RE model
+# m1_re_r  <- plm(DV_VA._pc ~  DV_VA._pc_lag1 + 
+#                         IV_lending._pc + IV_lending._pc_lag1 + #IV_lending_pc_lag2 + 
+#                         IV_gov_exp._pc + IV_gov_exp._pc_lag1 + #IV_gov_exp_pc_lag2 +
+#                         IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
+#                         IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
+#                 C_REER + C_wgdp + C_cpi + C_wgini,
+#           data = df, model = 'random')
+# phtest(m1_r, m1_re_r)
 ```
 ## 4. Explain financialization in the level of corporate
 
@@ -528,37 +514,37 @@ phtest(m2, m2_re)
 
 % of gdp
 ```{r}
-library(Matrix)
-library(plm)
-library(car)
-library(lmtest)
-
-# m1 is an FE model
-m2  <- plm(DV_nfc_ls._pc ~  DV_nfc_ls._pc_lag1 + 
-                                   IV_lending._pc + IV_lending._pc_lag1 + #IV_lending_pc_lag2 + 
-            IV_gov_exp._pc + IV_gov_exp._pc_lag1 + #IV_gov_exp_pc_lag2 +
-             IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
-             IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
-             C_REER + C_wgdp + C_cpi, 
-           data = df, model = 'within',
-           effect = 'twoways', index = c('Country', 'Year'))
-summary(m2)
-
-# PCSE
-summary(m2, vcovBK)
-
-# Durbin-Watson Statistics
-pdwtest(m2)
-
-# m1_re is a RE model
-m2_re  <- plm(DV_nfc_ls._pc ~  DV_nfc_ls._pc_lag1 + 
-                                  IV_lending._pc + IV_lending._pc_lag1 + #IV_lending_pc_lag2 + 
-             IV_gov_exp._pc + IV_gov_exp._pc_lag1 + #IV_gov_exp_pc_lag2 +
-             IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
-             IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
-             C_REER + C_wgdp + C_cpi, 
-           data = df, model = 'random')
-phtest(m2, m2_re)
+# library(Matrix)
+# library(plm)
+# library(car)
+# library(lmtest)
+# 
+# # m1 is an FE model
+# m2_p  <- plm(DV_nfc_ls._pc ~  DV_nfc_ls._pc_lag1 + 
+#                                    IV_lending._pc + IV_lending._pc_lag1 + #IV_lending_pc_lag2 + 
+#             IV_gov_exp._pc + IV_gov_exp._pc_lag1 + #IV_gov_exp_pc_lag2 +
+#              IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
+#              IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
+#              C_REER + C_wgdp + C_cpi, 
+#            data = df, model = 'within',
+#            effect = 'twoways', index = c('Country', 'Year'))
+# summary(m2)
+# 
+# # PCSE
+# summary(m2, vcovBK)
+# 
+# # Durbin-Watson Statistics
+# pdwtest(m2)
+# 
+# # m1_re is a RE model
+# m2_re_p  <- plm(DV_nfc_ls._pc ~  DV_nfc_ls._pc_lag1 + 
+#                                   IV_lending._pc + IV_lending._pc_lag1 + #IV_lending_pc_lag2 + 
+#              IV_gov_exp._pc + IV_gov_exp._pc_lag1 + #IV_gov_exp_pc_lag2 +
+#              IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
+#              IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
+#              C_REER + C_wgdp + C_cpi, 
+#            data = df, model = 'random')
+# phtest(m2, m2_re)
 ```
 
 ## 5. Explain financialization in the level of corporate
@@ -636,37 +622,37 @@ phtest(m3, m3_re)
 
 % of gdp
 ```{r}
-library(Matrix)
-library(plm)
-library(car)
-library(lmtest)
+# 
+# # m1 is an FE model
+# m3_p  <- plm(DV_hh_ls._pc ~  DV_hh_ls._pc_lag1 + 
+#                        IV_lending._pc + IV_lending._pc_lag1 + #IV_lending_pc_lag2 + 
+#                        IV_gov_exp._pc + IV_gov_exp._pc_lag1 + #IV_gov_exp_pc_lag2 +
+#                         IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
+#                         IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
+#              C_REER + C_wgdp + C_cpi,
+#           data = df, model = 'within',
+#           effect = 'twoways', index = c('Country', 'Year'))
+# summary(m3)
+# 
+# # PCSE
+# summary(m3, vcovBK)
+# 
+# # Durbin-Watson Statistics
+# pdwtest(m3)
+# 
+# # m1_re is a RE model
+# m3_re_p  <- plm(DV_hh_ls._pc ~  DV_hh_ls._pc_lag1 + 
+#                         IV_lending._pc + IV_lending._pc_lag1 + #IV_lending_pc_lag2 + 
+#                         IV_gov_exp._pc + IV_gov_exp._pc_lag1 + #IV_gov_exp_pc_lag2 +
+#                         IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +    
+#                         IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
+#                 C_REER + C_wgdp + C_cpi,
+#           data = df, model = 'random')
+# phtest(m3, m3_re)
+# 
 
-# m1 is an FE model
-m3  <- plm(DV_hh_ls._pc ~  DV_hh_ls._pc_lag1 + 
-                       IV_lending._pc + IV_lending._pc_lag1 + #IV_lending_pc_lag2 + 
-                       IV_gov_exp._pc + IV_gov_exp._pc_lag1 + #IV_gov_exp_pc_lag2 +
-                        IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
-                        IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
-             C_REER + C_wgdp + C_cpi,
-          data = df, model = 'within',
-          effect = 'twoways', index = c('Country', 'Year'))
-summary(m3)
-
-# PCSE
-summary(m3, vcovBK)
-
-# Durbin-Watson Statistics
-pdwtest(m3)
-
-# m1_re is a RE model
-m3_re  <- plm(DV_hh_ls._pc ~  DV_hh_ls._pc_lag1 + 
-                        IV_lending._pc + IV_lending._pc_lag1 + #IV_lending_pc_lag2 + 
-                        IV_gov_exp._pc + IV_gov_exp._pc_lag1 + #IV_gov_exp_pc_lag2 +
-                        IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +    
-                        IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
-                C_REER + C_wgdp + C_cpi,
-          data = df, model = 'random')
-phtest(m3, m3_re)
+save(m1, m1_re, m2, m2_re, m3, m3_re,
+     file = "../table_and_figure/model.RData")
 ```
 
 # 6. Figure and Table
@@ -685,6 +671,7 @@ colnames(po) <- c("po","va", "nfc", "hh")
 write.csv(po, "../table_and_figure/po.csv")
 
 # model data
+
 p_load(gtools)
 
 options(scipen = 999)
@@ -714,10 +701,31 @@ m3r <- m3r[1:2]
 # m3r <- data.frame(summary(m3)[1])[c(1:2,4)]
 # m3r <- rbind(c(NA, NA, NA), m3r)
 # 
+
+## r-square
+m1s <- data.frame(summary(m1)[11])[1,1]
+m2s <- data.frame(summary(m2_re)[12])[1,1]
+m3s <- data.frame(summary(m3)[11])[1,1]
+# N
+m1n <- nrow(data.frame((summary(m1)[3])))
+m2n <- nrow(data.frame((summary(m2_re)[3])))
+m3n <- nrow(data.frame((summary(m3)[3])))
+
+m1r <- rbind(m1r, c(m1s, NA), c(m1n, NA))
+m2r <- rbind(m2r, c(m2s, NA), c(m2n, NA))
+m3r <- rbind(m3r, c(m3s, NA), c(m3n, NA))
+
 model <- cbind(m1r, m2r, m3r)
 model[1,1] <- ""
 model[1,5] <- ""
 write.csv(model, "../table_and_figure/model.csv")
+
+# # Durbin-Watson 
+# m1dw <- pdwtest(m1)
+# m2dw <- pdwtest(m2_re)
+# m3dw <- pdwtest(m3)
+# 
+# m1dw_value <- "()"
 
 options(scipen = 0)
 ```
