@@ -105,35 +105,37 @@ kable(hausman, "pipe",
 ```
 
 ```{r echo = FALSE, rsult = 'asis'}
-# models <- list()
-# load("./table_and_figure/model.RData")
-# models[['M1: Values added']] <- m1
-# models[['M2: NFC debts']] <- m2_re
-# models[['M3: Household debts']] <- m3
-# 
-# cm <- c("(Intercept)" = "(Intercept)",
-#          'DV_VA_pc_lag1' = "Dependent variable (lag 1)",
-#         'DV_nfc_ls_pc_lag1' = "Dependent variable (lag 1)",
-#         'DV_hh_ls_pc_lag1' = "Dependent variable (lag 1)",
-#         'IV_lending_pc' = "Government net lending",
-#          "IV_lending_pc_lag1" = "Government net lending (lag 1)",
-#         "IV_gov_exp_pc" = "Government expenditure",
-#         "IV_gov_exp_pc_lag1" = "Government expenditure (lag 1)",
-#         "IV_trade_balance_pc" = "Net trade balance",
-#         "IV_trade_balance_pc_lag1" = "Net trade balance (lag 1)",
-#         "C_REER" = "Real Effect Exchange Rates",
-#         "C_wgdp" = "GDP",
-#         "C_cpi" = "CPI",
-#         "C_wgini" = "GINI")
-# 
-# modelsummary(models,
-#          statistics = "std.error",
-#          stars = TRUE,
-#          coef_map = cm,
-#          title = "Dynamic Regression Models with Panel-Corrected Standard Errors, 1978-2018") %>%
-#    pack_rows("Statecraft contigency", 3, 6) %>%
-#    pack_rows("Development pitfall", 7,10) %>%
-#    pack_rows("Control variable", 11, 14)
+options(modelsummary_html = 'kableExtra')
+
+models <- list()
+load("./table_and_figure/model.RData")
+models[['M1: Values added']] <- m1
+models[['M2: NFC debts']] <- m2_re
+models[['M3: Household debts']] <- m3
+
+cm <- c("(Intercept)" = "(Intercept)",
+         'DV_VA_pc_lag1' = "Dependent variable (lag 1)",
+        'DV_nfc_ls_pc_lag1' = "Dependent variable (lag 1)",
+        'DV_hh_ls_pc_lag1' = "Dependent variable (lag 1)",
+        'IV_lending_pc' = "Government net lending",
+         "IV_lending_pc_lag1" = "Government net lending (lag 1)",
+        "IV_gov_exp_pc" = "Government expenditure",
+        "IV_gov_exp_pc_lag1" = "Government expenditure (lag 1)",
+        "IV_trade_balance_pc" = "Net trade balance",
+        "IV_trade_balance_pc_lag1" = "Net trade balance (lag 1)",
+        "C_REER" = "Real Effect Exchange Rates",
+        "C_wgdp" = "GDP",
+        "C_cpi" = "CPI",
+        "C_wgini" = "GINI")
+
+modelsummary(models,
+         statistics = "std.error",
+         stars = TRUE,
+         coef_map = cm,
+         title = "Dynamic Regression Models with Panel-Corrected Standard Errors, 1978-2018") %>%
+   pack_rows("Statecraft contigency", 3, 6) %>%
+   pack_rows("Development pitfall", 7,10) %>%
+   pack_rows("Control variable", 11, 14)
 
 ```
 
