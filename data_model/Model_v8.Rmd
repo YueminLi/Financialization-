@@ -348,8 +348,9 @@ summary(m1)
 # PCSE
 summary(m1, vcovBK)
 
-# Durbin-Watson Statistics
-pdwtest(m1)
+# Durbin-Watson Statistics (https://stackoverflow.com/questions/31894055/pdwtest-from-plm-with-wrong-p-value-and-statistic-for-panel-models-and-pooled)
+#pdwtest(m1)
+pwartest(m1)
 
 # m1_re is a RE model
 m1_re  <- plm(DV_VA_pc ~  DV_VA_pc_lag1 + 
@@ -360,6 +361,34 @@ m1_re  <- plm(DV_VA_pc ~  DV_VA_pc_lag1 +
                         C_REER + C_wgdp + C_cpi + C_wgini,
           data = df, model = 'random')
 phtest(m1, m1_re)
+
+# pooled OLS
+m1_pool <- plm(DV_VA_pc ~  DV_VA_pc_lag1 + 
+                        IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
+                        IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
+                        IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
+                        IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
+                        C_REER + C_wgdp + C_cpi + C_wgini,
+               data = df, index = c('Country', 'Year'), model='pooling')
+plmtest(m1_pool, type=c('bp'))
+        
+# test for cross-sectional dependence (cross-sectional dependence exists)
+pcdtest(m1, test=c('lm'))
+pcdtest(m3, test=c('cd'))
+
+# test for heteroskedasticity (presence of heteroskedasticity)
+library(lmtest)
+bptest(DV_VA_pc ~  DV_VA_pc_lag1 + 
+                        IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
+                        IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
+                        IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
+                        IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
+                        C_REER + C_wgdp + C_cpi + C_wgini + factor(Country), data=df, studentize=F)
+
+# controlling for heteroskedasticity: Fixed effects
+coeftest(m1, vcovHC) # heteroskedasticity consistent coefficients
+coeftest(m1, method='arellano') # heteroskedasticity consistent coefficients (Arellano)
+coeftest(m1, vcovHC(m1, type='HC3')) # heteroskedasticity consistent coefficients (type 3)
 ```
 
 check the countries included in the fitted model
@@ -499,7 +528,8 @@ summary(m2)
 summary(m2, vcovBK)
 
 # Durbin-Watson Statistics
-pdwtest(m2)
+#pdwtest(m2)
+pwartest(m2)
 
 # m1_re is a RE model
 m2_re  <- plm(DV_nfc_ls_pc ~  DV_nfc_ls_pc_lag1 + 
@@ -510,6 +540,34 @@ m2_re  <- plm(DV_nfc_ls_pc ~  DV_nfc_ls_pc_lag1 +
              C_REER + C_wgdp + C_cpi + C_wgini, 
            data = df, model = 'random')
 phtest(m2, m2_re)
+
+# pooled OLS (random effect is not appropriate)
+m2_pool <- plm(DV_nfc_ls_pc ~  DV_nfc_ls_pc_lag1 + 
+                                  IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
+             IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
+             IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
+             IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
+             C_REER + C_wgdp + C_cpi + C_wgini,
+               data = df, index = c('Country', 'Year'), model='pooling')
+plmtest(m2_pool, type=c('bp'))
+        
+# test for cross-sectional dependence (cross-sectional dependence exists)
+pcdtest(m2, test=c('lm')) # cross-sectional dependence
+pcdtest(m2, test=c('cd')) # no cross-sectional dependence
+
+# test for heteroskedasticity (presence of heteroskedasticity)
+library(lmtest)
+bptest(DV_nfc_ls_pc ~  DV_nfc_ls_pc_lag1 + 
+                                  IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
+             IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
+             IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
+             IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
+             C_REER + C_wgdp + C_cpi + C_wgini + factor(Country), data=df, studentize=F)
+
+# controlling for heteroskedasticity: Fixed effects
+coeftest(m2, vcovHC) # heteroskedasticity consistent coefficients
+coeftest(m2, method='arellano') # heteroskedasticity consistent coefficients (Arellano)
+coeftest(m2, vcovHC(m2, type='HC3')) # heteroskedasticity consistent coefficients (type 3)
 ```
 
 % of gdp
@@ -607,7 +665,8 @@ summary(m3)
 summary(m3, vcovBK)
 
 # Durbin-Watson Statistics
-pdwtest(m3)
+#pdwtest(m3)
+pwartest(m3)
 
 # m1_re is a RE model
 m3_re  <- plm(DV_hh_ls_pc ~  DV_hh_ls_pc_lag1 + 
@@ -618,6 +677,34 @@ m3_re  <- plm(DV_hh_ls_pc ~  DV_hh_ls_pc_lag1 +
                 C_REER + C_wgdp + C_cpi + C_wgini,
           data = df, model = 'random')
 phtest(m3, m3_re)
+
+# pooled OLS (random effect is appropriate)
+m3_pool <- plm(DV_hh_ls_pc ~  DV_hh_ls_pc_lag1 + 
+                       IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
+                       IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
+                        IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
+                        IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
+             C_REER + C_wgdp + C_cpi + C_wgini,
+               data = df, index = c('Country', 'Year'), model='pooling')
+plmtest(m3_pool, type=c('bp'))
+        
+# test for cross-sectional dependence (cross-sectional dependence exists)
+pcdtest(m3, test=c('lm')) # cross-sectional dependence
+pcdtest(m3, test=c('cd')) # no cross-sectional dependence
+
+# test for heteroskedasticity (presence of heteroskedasticity)
+library(lmtest)
+bptest(DV_hh_ls_pc ~  DV_hh_ls_pc_lag1 + 
+                       IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
+                       IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
+                        IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
+                        IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
+             C_REER + C_wgdp + C_cpi + C_wgini + factor(Country), data=df, studentize=F)
+
+# controlling for heteroskedasticity: Fixed effects
+coeftest(m3, vcovHC) # heteroskedasticity consistent coefficients
+coeftest(m3, method='arellano') # heteroskedasticity consistent coefficients (Arellano)
+coeftest(m3, vcovHC(m2, type='HC3')) # heteroskedasticity consistent coefficients (type 3)
 ```
 
 % of gdp
