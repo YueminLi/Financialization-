@@ -1,0 +1,414 @@
+---
+title: "Model_v2.0"
+author: "Yuemin Li and Yimang Zhou"
+date: "4/30/2021"
+output: html_document
+---
+
+- A final version close to the paper.
+- Rmarkdown for the paper should use model results from this version.
+- The last version is Model_v1.8
+
+```{r}
+if (!require("pacman")) install.packages("pacman")
+p_load(data.table, tidyverse, Hmisc, Matrix, lfe, plm, dynlm, car, lmtest, tseries, broom, knitr)
+```
+
+## 0. Data Preprocessing
+
+Read the data and drop obs prior to 1960 (this step is not necessary).
+
+```{r}
+df <- read.csv("../data_processing/financialization_df.csv")
+df$X <- NULL
+df <- df %>%
+      filter(Year >= 1960) 
+colnames(df)
+df[df==0] <- NA
+df <- df[order(df$Country, df$Year),]
+```
+
+The data has already been preprocessed but requires further preprocessing. 
+
+```{r}
+# generate IV_fdi_net_pc and its lagged variables
+df <- df %>%
+  group_by(Country) %>%
+  mutate(IV_fdi_net_lag1 = dplyr::lag(IV_fdi_net,k=1)) %>%
+  mutate(IV_fdi_net_pc = (IV_fdi_net-IV_fdi_net_lag1)/IV_fdi_net_lag1*100) %>%
+  mutate(IV_fdi_net_pc_lag1 = dplyr::lag(IV_fdi_net_pc,k=1)) %>%
+  mutate(IV_fdi_net_pc_lag2 = dplyr::lag(IV_fdi_net_pc,k=2)) %>%
+  ungroup()
+# drop the inf values 
+turn_na <- function(a){
+  a[abs(a)>10^10] <- NA
+  a
+}
+for(i in 2:length(df)){
+  df[,i] <- lapply(df[,i], turn_na)
+}
+```
+
+## 1. Do the three levels of financialization co-occur and in the US only ?
+
+This part attempts to select countries experience financialization since 1960. We determine it by test if an indicator of financialization (i.e., a dependent variable) is stationary by ADF tests. If the indicator is stationary in a country, it indicates that the country is not financialized during the period in this dimension.
+
+"The Dickey-Fuller test tests the null hypothesis that a unit root is present in an autoregressive model. The alternative hypothesis is different depending on which version of the test is used, but is usually stationarity and trend-stationary." (wikipeida) 
+
+A unit root is present if $\rho = 1$ in $y_{t} = \rho y_{t-1}+u_{t}$.
+If the null hypothesis is not rejected, a unit root is present and the variable is not stationary. Instead, a variable is stationary if the null hypothesis is reject. 
+
+Define adf function (http://www.econ.uiuc.edu/~econ508/R/e-ta8_R.html)
+
+```{r}
+"adf" <- function(x,k = 0, int = TRUE, trend = FALSE){
+# NB:  returns conventional lm summary so p-values for adf test are wrong!
+    require(dynlm)
+    dx <- diff(x)
+    formula <- paste("dx ~ L(x)")
+    if(k > 0)
+        formula <- paste(formula," + L(dx,1:k)")
+    if(trend){
+        s <- time(x)
+        t <- ts(s - s[1],start = s[1],freq = frequency(x))
+        formula <- paste(formula," + t")
+        }
+    if(!int) formula <- paste(formula," - 1")
+    summary(dynlm(as.formula(formula)))
+}
+```
+
+
+ADF test for each country
+Generate adf_test() function, the strategy is:
+1. extract the column of independent variable X from df
+2. for a certain country C, use adf() function to calculate the augmented Dickey-Fuller statistic for rejecting non-stationarity
+3. combine the results from all countries together and report
+
+```{r}
+adf_test <- function(df, x, k = k){
+   result <- data.frame(country = c(),
+                        lx_t = c(),
+                        lx_p = c(),
+                        stationarity = c())
+   df %>%
+     select(Country, Year, x) -> iv
+   iv <- na.omit(iv)
+   iv$Country <- as.character(iv$Country)
+   country <- data.frame(table(iv$Country))[,1]
+   for(i in 1:length(country)){
+     countryname = as.character(country[i])
+     temp <- iv %>%
+       filter(Country == countryname)
+     adf_iv <- ts(temp[,3])
+     adf(adf_iv, k = k, int = T, trend = T) -> adf_model
+     adf_model$coefficient[2,3] -> lx_t
+     adf_model$coefficient[2,4] -> lx_p
+     stationarity = c()
+     stationarity[lx_p < 0.05] <- "stationarity"
+     stationarity[lx_p > 0.05] <- "non-stationarity"
+     newrow <- c(countryname, lx_t, lx_p, stationarity)
+     result <- rbind(result, newrow)
+   }
+   colnames(result) <- c("country","lx_t","lx_p","stationarity")
+   print(result)
+}
+```
+
+
+```{r}
+VA_adf <- adf_test(df,all_of("DV_VA"),1)
+nfc_adf <- adf_test(df,all_of("DV_nfc_ls"),1)
+hh_adf <- adf_test(df,all_of("DV_hh_ls"),1)
+```
+
+Hypothesis 1: The three levels of financialization do not co-occur in all countries. 
+
+Compare the varieties of financialization among different countries
+
+First, many countries find some kind of financialization. Only a few countries do not witness financialization in all the three levels (Estonia, Germany, Luxembourg).
+
+Second, only a few countries find all the three levels of financialization (Australia, Israel, Italy, Slovak). Even in the U.S., financialization shows only in the level of the market and corporation. In most countries, the three levels of financialization do not co-occur.
+
+```{r}
+variety <- merge(VA_adf, nfc_adf, by = "country", all.y = T)
+variety <- merge(variety, hh_adf, by = "country", all.y = T)
+variety <- select(variety,
+                  country, stationarity.x, stationarity.y, stationarity)
+variety <- variety[,c("country", "stationarity.x", "stationarity.y", "stationarity")]
+colnames(variety) <- c("country", "va", "nfc", "hh")
+variety
+```
+
+## 2. panel ADF test
+https://rdrr.io/rforge/punitroots/man/pCADFtest.html
+```{r}
+p_load(fBasics,fUnitRoots)
+if (!require("punitroots"))install.packages("punitroots", repos="http://R-Forge.R-project.org")
+if (!require("CADFtest"))install.packages("CADFtest")
+#install.packages("ua")
+library(punitroots)
+```
+
+ADF test is 
+
+First we create the databases consistent with those used in the models. There are 31 countries.
+
+```{r}
+model_country <- c("Australia", "Austria", "Belgium", "Brazil", "Canada",
+                   "Chile", "China", "Denmark", "Finland", "France",
+                   "Germany", "Greece", "Hungary", "Iceland", "Ireland",
+                   "Israel","Italy", "Japan", "Korea", "Mexico",
+                   "Netherlands", "New Zealand", "Norway", "Poland", "Portugal",
+                   "Spain", "Sweden", "Switzerland", "Turkey", "United Kingdom",
+                   "United States")
+df_model <- df[df$Country %in% model_country,]
+```
+
+The ADF tests on the variables are based on the df_model data because the obs included in the three models are different from each other.
+
+All varaibles reject the null hypotheses to indicate the presence of stationarity.
+```{r}
+padf <- function(df, x){
+  df %>%
+    select(Country, Year, x) -> iv
+  iv <- na.omit(iv)
+  result = pCADFtest(Y=iv, max.lag.y = 5, criterion = "AIC", crosscorr=0.10)
+  print(result)
+}
+
+VA_padf <- padf(df,"DV_VA_pc") 
+nfc_padf <- padf(df,"DV_nfc_ls_pc")
+hh_padf <- padf(df,"DV_hh_ls_pc")
+lending_padf <- padf(df, "IV_lending_pc")
+govexp_padf <- padf(df, "IV_gov_exp_pc")
+trade_balance_padf <- padf(df, "IV_trade_balance_pc")
+fdi_net_padf <- padf(df, "IV_fdi_net_pc")
+
+rbind(as.numeric(VA_padf[1]), as.numeric(nfc_padf[1]), as.numeric(hh_padf[1]),
+      as.numeric(lending_padf[1]), as.numeric(govexp_padf[1]), as.numeric(trade_balance_padf[1]),
+      as.numeric(fdi_net_padf[1])) -> ADF_statistics
+
+rbind(as.numeric(VA_padf[4]), as.numeric(nfc_padf[4]), as.numeric(hh_padf[4]),
+      as.numeric(lending_padf[4]), as.numeric(govexp_padf[4]), as.numeric(trade_balance_padf[4]),
+      as.numeric(fdi_net_padf[4])) -> P_value
+
+variable <- c("Values added in financial activities", "Nonfinancial corporate debts", "Household debts",
+              "Government net lending", "Government expenditure", "Net trade balance", "FDI net outflow")
+padf_table <- data.frame(cbind(variable, ADF_statistics, P_value))
+colnames(padf_table) <- c("Variable", "ADF_statistics", "P_value")
+write.csv(padf_table, "../table_and_figure/padf_table.csv")
+```
+
+Then We use the database for correlations between variables.
+
+```{r}
+cor_df <- df_model %>%
+  select(DV_VA_pc,DV_nfc_ls_pc,DV_hh_ls_pc,
+         IV_lending_pc, IV_gov_exp_pc,IV_trade_balance_pc,IV_fdi_net_pc)
+cor_mat <- cor(cor_df, use = 'na')
+cor_mat[upper.tri(cor_mat)] <- NA
+cor_mat
+write.csv(cor_mat, '../table_and_figure/cor_mat.csv')
+```
+
+## 3. Explain financialization in the level of the market
+
+Hypothesis 2a: The rise of financialization at the market-level is positively correlated with the growth of the domestic government spending.
+
+Hypothesis 2b: The rise of financialization at the market-level is positively correlated with the foreign trade deficits.
+
+### 3.0 Database and descriptive statistics
+
+This part produces a database identical to the model for 3.1 and other uses. NAs are removed manually but the removal is consistent with the result of model removal.
+
+```{r}
+va_df <- df_model %>%
+  select(DV_VA_pc,DV_VA_pc_lag1, 
+          IV_lending_pc, IV_lending_pc_lag1,
+          IV_gov_exp_pc, IV_gov_exp_pc_lag1,
+          IV_trade_balance_pc, IV_trade_balance_pc_lag1,                           
+          IV_fdi_net_pc, IV_fdi_net_pc_lag1,
+          C_REER, C_wgdp, C_cpi, C_wgini,
+         Country, Year)
+va_df <- na.omit(va_df)
+```
+
+### 3.1 Phillips-Ouliaris test of Cointegration
+
+"Cointegration is a technique used to find a possible correlation between time series processes in the long term. Nobel laureates Robert Engle and Clive Granger introduced the concept of cointegration in 1987. The most popular cointegration tests include Engle-Granger, the Johansen Test, and the Phillips-Ouliaris test."
+
+The null hypothesis of Phillips-Ouliaris test is that x not cointegrated.In all tests. 
+
+In all tests below, null hypotheses are rejected.
+
+```{r}
+library(tseries)
+po.test(as.matrix(cbind(va_df$DV_VA_pc, va_df$IV_lending_pc), demean=FALSE)) -> po_va_lending
+po.test(as.matrix(cbind(va_df$DV_VA_pc, va_df$IV_gov_exp_pc), demean=FALSE)) -> po_va_exp
+po.test(as.matrix(cbind(va_df$DV_VA_pc, va_df$IV_trade_balance_pc), demean=FALSE)) -> po_va_trade
+po.test(as.matrix(cbind(va_df$DV_VA_pc, va_df$IV_fdi_net_pc), demean=FALSE)) -> po_va_fdi
+
+po_va <- rbind(as.numeric(po_va_lending[1]), as.numeric(po_va_exp[1]), 
+               as.numeric(po_va_trade[1]), as.numeric(po_va_fdi[1]))
+po_va
+
+```
+
+### 3.2 Three basic models
+
+```{r}
+# m1_fe is an FE model
+m1_fe  <- plm(DV_VA_pc ~  DV_VA_pc_lag1 + 
+                        IV_lending_pc + IV_lending_pc_lag1 +  
+                        IV_gov_exp_pc + IV_gov_exp_pc_lag1 + 
+                        IV_trade_balance_pc + IV_trade_balance_pc_lag1 +                             
+                        IV_fdi_net_pc + IV_fdi_net_pc_lag1 + 
+                        C_REER + C_wgdp + C_cpi + C_wgini,
+          data = df, model = 'within',
+          effect = 'twoways', index = c('Country', 'Year'))
+
+# m1_re is a RE model
+m1_re  <- plm(DV_VA_pc ~  DV_VA_pc_lag1 + 
+                        IV_lending_pc + IV_lending_pc_lag1 +  
+                        IV_gov_exp_pc + IV_gov_exp_pc_lag1 + 
+                        IV_trade_balance_pc + IV_trade_balance_pc_lag1 +                             
+                        IV_fdi_net_pc + IV_fdi_net_pc_lag1 + 
+                        C_REER + C_wgdp + C_cpi + C_wgini,
+          data = df, model = 'random')
+
+# m1_pool is a pool OLS
+m1_pool <- plm(DV_VA_pc ~  DV_VA_pc_lag1 + 
+                        IV_lending_pc + IV_lending_pc_lag1 + 
+                        IV_gov_exp_pc + IV_gov_exp_pc_lag1 + 
+                        IV_trade_balance_pc + IV_trade_balance_pc_lag1 +                         
+                        IV_fdi_net_pc + IV_fdi_net_pc_lag1 +
+                        C_REER + C_wgdp + C_cpi + C_wgini,
+               data = df, index = c('Country', 'Year'), model='pooling')
+
+```
+
+### 3.3 Hausman test
+
+In panel data analysis (the analysis of data over time), the Hausman test can help you to choose between fixed effects model or a random effects model. The null hypothesis is that the preferred model is random effects; The alternate hypothesis is that the model is fixed effects. The result here rejects null hypothesis and prefers fixed-effect model.
+
+```{r}
+phtest(m1_fe, m1_re)
+```
+
+### 3.4 Diagnosis
+#### 3.4.2 Breusch-Pagan LM test for cross-sectional dependence in panels
+
+Panel data can be subject to pervasive cross-sectional dependence, whereby all units in the same cross-section are correlated. This is usually attributed to the effect of some unobserved common factors, common to all units and affecting each of them, although possibly in different ways. 
+
+"According to Baltagi, cross-sectional dependence is a problem in macro panels with long time series. This is not much of a problem in micro panels (few years and large number of cases). 
+The null hypothesis in the B-P/LM and Pasaran CD tests of independence is that residuals across entities are not correlated. B-P/LM and Pasaran CD (cross-sectional dependence) tests are used to test whether the residuals are correlated across entities*. Cross-sectional dependence can lead to bias in tests results (also called contemporaneous correlation). "
+
+The result shows cross-sectional dependence exists for m1_fe.tf model.
+
+```{r}
+# test for cross-sectional dependence (cross-sectional dependence exists)
+pcdtest(m1_fe.tf, test=c('cd'))
+pcdtest(m1_fe.tf, test=c('lm'))
+```
+
+#### 3.4.3 Testing for unit roots/stationarity
+
+```{r}
+padf(va_df, "DV_VA_pc")
+```
+
+#### 3.4.4 test for heteroskedasticity (presence of heteroskedasticity)
+
+The null hypothesis for the Breusch-Pagan test is homoskedasticity
+
+The test below rejects the null hypothesis and suggests the presence of heteroskedasticity.
+```{r}
+library(lmtest)
+bptest(DV_VA_pc ~  DV_VA_pc_lag1 + 
+                        IV_lending_pc + IV_lending_pc_lag1 + 
+                        IV_gov_exp_pc + IV_gov_exp_pc_lag1 + 
+                        IV_trade_balance_pc + IV_trade_balance_pc_lag1 +                           
+                        IV_fdi_net_pc + IV_fdi_net_pc_lag1 +
+                        C_REER + C_wgdp + C_cpi + C_wgini + factor(Country), data=df, studentize=F)
+
+
+```
+
+controlling for heteroskedasticity: Fixed effects
+coeftest(m1, vcovHC) # heteroskedasticity consistent coefficients
+coeftest(m1, method='arellano') # heteroskedasticity consistent coefficients (Arellano)
+coeftest(m1, vcovHC(m1, type='HC3')) # heteroskedasticity consistent coefficients (type 3)
+
+
+```{r}
+coeftest(m1_fe.tf) # Original coefficients
+coeftest(m1_fe.tf, vcovHC(m1_re, method = "arellano")) # Heteroskedasticity consistent coefficients
+# vcovHC(m1_re,
+# method = c("white1"),
+# type = c("HC3"),
+# cluster = c("group", "time"))
+
+# t(sapply(c("HC0", "HC1", "HC2", "HC3", "HC4"), function(x) sqrt(diag(vcovHC(m1_re, type = x))))) # Standard errors given different types of HC
+m1_control <- coeftest(m1_fe.tf, vcovHC(m1_re, method = "arellano"))
+```
+
+# FGLS
+m1_ols <- lm(DV_VA_pc ~  DV_VA_pc_lag1 + 
+                        IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
+                        IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
+                        IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
+                        IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
+                      C_REER + C_wgdp + C_cpi + C_wgini, data = va_df)
+va_fgls <- va_df %>% mutate(u=resid(m1_ols), g=log(u^2))
+m1_g <- lm(g ~ DV_VA_pc_lag1 + 
+                        IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
+                        IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
+                        IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
+                        IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
+                        C_REER + C_wgdp + C_cpi + C_wgini, va_fgls)
+va_fgls <- va_fgls %>% mutate(ghat=fitted(m1_g), hhat=exp(ghat))
+m1_fgls <- lm(formula=DV_VA_pc ~  DV_VA_pc_lag1 + 
+                        IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
+                        IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
+                        IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
+                        IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
+                        C_REER + C_wgdp + C_cpi + C_wgini, data=va_fgls, weights=1/hhat)
+summary(m1_fgls) 
+
+## 4. Explain financialization in the level of the corporation
+
+Hypothesis 3a: The rise of financialization at the corporation-level is positively correlated with the growth of the domestic government spending.
+Hypothesis 3b: The rise of financialization at the corporation-level is positively correlated with the foreign trade deficits.
+
+### 4.0 Database and descriptive statistics
+
+This part produces a database identical to the model for 4.1 and other uses.
+
+```{r}
+nfc_df <- df_model %>%
+  select(DV_nfc_ls_pc,DV_nfc_ls_pc_lag1, 
+          IV_lending_pc, IV_lending_pc_lag1,
+          IV_gov_exp_pc, IV_gov_exp_pc_lag1,
+          IV_trade_balance_pc, IV_trade_balance_pc_lag1,                           
+          IV_fdi_net_pc, IV_fdi_net_pc_lag1,
+          C_REER, C_wgdp, C_cpi, C_wgini,
+          Country, Year)
+nfc_df <- na.omit(nfc_df)
+```
+
+### 4.1 Phillips-Ouliaris test of Cointegration
+```{r}
+library(tseries)
+po.test(as.matrix(cbind(nfc_df$DV_nfc_ls_pc, nfc_df$IV_lending_pc), demean=FALSE)) -> po_nfc_lending
+po.test(as.matrix(cbind(nfc_df$DV_nfc_ls_pc, nfc_df$IV_gov_exp_pc), demean=FALSE)) -> po_nfc_exp
+po.test(as.matrix(cbind(nfc_df$DV_nfc_ls_pc, nfc_df$IV_trade_balance_pc), demean=FALSE)) -> po_nfc_trade
+po.test(as.matrix(cbind(nfc_df$DV_nfc_ls_pc, nfc_df$IV_fdi_net_pc), demean=FALSE)) -> po_nfc_fdi
+#po.test(as.matrix(cbind(nfc_df$DV_nfc_ls_pc, nfc_df$IV_wgini_pc), demean=FALSE))
+
+po_nfc <- rbind(as.numeric(po_nfc_lending[1]), as.numeric(po_nfc_exp[1]), 
+               as.numeric(po_nfc_trade[1]), as.numeric(po_nfc_fdi[1]))
+
+po_nfc
+```
+

@@ -374,7 +374,7 @@ plmtest(m1_pool, type=c('bp'))
         
 # test for cross-sectional dependence (cross-sectional dependence exists)
 pcdtest(m1, test=c('lm'))
-pcdtest(m3, test=c('cd'))
+pcdtest(m1, test=c('cd'))
 
 # test for heteroskedasticity (presence of heteroskedasticity)
 library(lmtest)
@@ -414,15 +414,17 @@ m1_fgls <- lm(formula=DV_VA_pc ~  DV_VA_pc_lag1 +
 summary(m1_fgls)
 
 # PCSE
-#library("pcse")
-#m1_ols <- lm(DV_VA_pc ~  DV_VA_pc_lag1 + 
-#                        IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
-#                        IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
-#                        IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
-#                        IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
-#                        C_REER + C_wgdp + C_cpi + C_wgini, data = df)
+library("pcse")
+va_df$Country <- as.factor(va_df$Country)
+m1_ols <- lm(DV_VA_pc ~  DV_VA_pc_lag1 +
+                        IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 +
+                        IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
+                        IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +
+                        IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
+                        C_REER + C_wgdp + C_cpi + C_wgini, data = va_df)
 
-#m1.pcse <- pcse(m1_ols, groupN = df$Country, groupT = df$Year)
+m1.pcse <- pcse(m1_ols, groupN = va_df$Country, groupT = va_df$Year, pairwise = TRUE)
+summary(m1.pcse)
 ```
 
 check the countries included in the fitted model
