@@ -390,6 +390,29 @@ coeftest(m1, vcovHC) # heteroskedasticity consistent coefficients
 coeftest(m1, method='arellano') # heteroskedasticity consistent coefficients (Arellano)
 coeftest(m1, vcovHC(m1, type='HC3')) # heteroskedasticity consistent coefficients (type 3)
 
+# FGLS
+m1_ols <- lm(DV_VA_pc ~  DV_VA_pc_lag1 + 
+                        IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
+                        IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
+                        IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
+                        IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
+                      C_REER + C_wgdp + C_cpi + C_wgini, data = va_df)
+va_fgls <- va_df %>% mutate(u=resid(m1_ols), g=log(u^2))
+m1_g <- lm(g ~ DV_VA_pc_lag1 + 
+                        IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
+                        IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
+                        IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
+                        IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
+                        C_REER + C_wgdp + C_cpi + C_wgini, va_fgls)
+va_fgls <- va_fgls %>% mutate(ghat=fitted(m1_g), hhat=exp(ghat))
+m1_fgls <- lm(formula=DV_VA_pc ~  DV_VA_pc_lag1 + 
+                        IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
+                        IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
+                        IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
+                        IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
+                        C_REER + C_wgdp + C_cpi + C_wgini, data=va_fgls, weights=1/hhat)
+summary(m1_fgls)
+
 # PCSE
 #library("pcse")
 #m1_ols <- lm(DV_VA_pc ~  DV_VA_pc_lag1 + 
@@ -397,7 +420,7 @@ coeftest(m1, vcovHC(m1, type='HC3')) # heteroskedasticity consistent coefficient
 #                        IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
 #                        IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
 #                        IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
-#                        C_REER + C_wgdp + C_cpi + C_wgini, data = m1_mf)
+#                        C_REER + C_wgdp + C_cpi + C_wgini, data = df)
 
 #m1.pcse <- pcse(m1_ols, groupN = df$Country, groupT = df$Year)
 ```
@@ -579,6 +602,29 @@ bptest(DV_nfc_ls_pc ~  DV_nfc_ls_pc_lag1 +
 coeftest(m2, vcovHC) # heteroskedasticity consistent coefficients
 coeftest(m2, method='arellano') # heteroskedasticity consistent coefficients (Arellano)
 coeftest(m2, vcovHC(m2, type='HC3')) # heteroskedasticity consistent coefficients (type 3)
+
+# FGLS
+m2_ols <- lm(DV_nfc_ls_pc ~  DV_nfc_ls_pc_lag1 + 
+                                  IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
+             IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
+             IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
+             IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
+             C_REER + C_wgdp + C_cpi + C_wgini, data = nfc_df)
+nfc_fgls <- nfc_df %>% mutate(u=resid(m2_ols), g=log(u^2))
+m2_g <- lm(g ~ DV_nfc_ls_pc_lag1 + 
+                                  IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
+             IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
+             IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
+             IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
+             C_REER + C_wgdp + C_cpi + C_wgini, nfc_fgls)
+nfc_fgls <- nfc_fgls %>% mutate(ghat=fitted(m2_g), hhat=exp(ghat))
+m2_fgls <- lm(formula=DV_nfc_ls_pc ~  DV_nfc_ls_pc_lag1 + 
+                                  IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
+             IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
+             IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
+             IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
+             C_REER + C_wgdp + C_cpi + C_wgini, data=nfc_fgls, weights=1/hhat)
+summary(m2_fgls)
 ```
 
 % of gdp
@@ -716,6 +762,29 @@ bptest(DV_hh_ls_pc ~  DV_hh_ls_pc_lag1 +
 coeftest(m3, vcovHC) # heteroskedasticity consistent coefficients
 coeftest(m3, method='arellano') # heteroskedasticity consistent coefficients (Arellano)
 coeftest(m3, vcovHC(m2, type='HC3')) # heteroskedasticity consistent coefficients (type 3)
+
+# FGLS
+m3_ols <- lm(DV_hh_ls_pc ~  DV_hh_ls_pc_lag1 + 
+                       IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
+                       IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
+                        IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
+                        IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
+             C_REER + C_wgdp + C_cpi + C_wgini, data = hh_df)
+hh_fgls <- hh_df %>% mutate(u=resid(m3_ols), g=log(u^2))
+m3_g <- lm(g ~ DV_hh_ls_pc_lag1 + 
+                       IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
+                       IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
+                        IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
+                        IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
+             C_REER + C_wgdp + C_cpi + C_wgini, hh_fgls)
+hh_fgls <- hh_fgls %>% mutate(ghat=fitted(m3_g), hhat=exp(ghat))
+m3_fgls <- lm(formula=DV_hh_ls_pc ~  DV_hh_ls_pc_lag1 + 
+                       IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
+                       IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
+                        IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
+                        IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
+             C_REER + C_wgdp + C_cpi + C_wgini, data=hh_fgls, weights=1/hhat)
+summary(m3_fgls)
 ```
 
 % of gdp
