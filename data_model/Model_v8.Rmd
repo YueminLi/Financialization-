@@ -389,6 +389,17 @@ bptest(DV_VA_pc ~  DV_VA_pc_lag1 +
 coeftest(m1, vcovHC) # heteroskedasticity consistent coefficients
 coeftest(m1, method='arellano') # heteroskedasticity consistent coefficients (Arellano)
 coeftest(m1, vcovHC(m1, type='HC3')) # heteroskedasticity consistent coefficients (type 3)
+
+# PCSE
+#library("pcse")
+#m1_ols <- lm(DV_VA_pc ~  DV_VA_pc_lag1 + 
+#                        IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
+#                        IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
+#                        IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
+#                        IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
+#                        C_REER + C_wgdp + C_cpi + C_wgini, data = m1_mf)
+
+#m1.pcse <- pcse(m1_ols, groupN = df$Country, groupT = df$Year)
 ```
 
 check the countries included in the fitted model
