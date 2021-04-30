@@ -335,7 +335,7 @@ The result support Hypothesis 3.1.
 multiple of GDP
 ```{r}
 # m1 is an FE model
-m1  <- plm(DV_VA_pc ~  DV_VA_pc_lag1 + 
+m1_fe  <- plm(DV_VA_pc ~  DV_VA_pc_lag1 + 
                         IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
                         IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
                         IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
@@ -343,14 +343,15 @@ m1  <- plm(DV_VA_pc ~  DV_VA_pc_lag1 +
                         C_REER + C_wgdp + C_cpi + C_wgini,
           data = df, model = 'within',
           effect = 'twoways', index = c('Country', 'Year'))
-summary(m1)
+summary(m1_fe)
 
 # PCSE
-summary(m1, vcovBK)
+#summary(m1, vcovBK)
+coeftest(m1_fe, vcov.=vcovBK)
 
 # Durbin-Watson Statistics (https://stackoverflow.com/questions/31894055/pdwtest-from-plm-with-wrong-p-value-and-statistic-for-panel-models-and-pooled)
-#pdwtest(m1)
-pwartest(m1)
+pwartest(m1_fe)
+pdwtest(m1_re)
 
 # m1_re is a RE model
 m1_re  <- plm(DV_VA_pc ~  DV_VA_pc_lag1 + 
@@ -360,7 +361,7 @@ m1_re  <- plm(DV_VA_pc ~  DV_VA_pc_lag1 +
                         IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
                         C_REER + C_wgdp + C_cpi + C_wgini,
           data = df, model = 'random')
-phtest(m1, m1_re)
+phtest(m1_fe, m1_re)
 
 # pooled OLS
 m1_pool <- plm(DV_VA_pc ~  DV_VA_pc_lag1 + 
@@ -373,8 +374,8 @@ m1_pool <- plm(DV_VA_pc ~  DV_VA_pc_lag1 +
 plmtest(m1_pool, type=c('bp'))
         
 # test for cross-sectional dependence (cross-sectional dependence exists)
-pcdtest(m1, test=c('lm'))
-pcdtest(m1, test=c('cd'))
+pcdtest(m1_fe, test=c('lm'))
+pcdtest(m1_fe, test=c('cd'))
 
 # test for heteroskedasticity (presence of heteroskedasticity)
 library(lmtest)
@@ -386,9 +387,9 @@ bptest(DV_VA_pc ~  DV_VA_pc_lag1 +
                         C_REER + C_wgdp + C_cpi + C_wgini + factor(Country), data=df, studentize=F)
 
 # controlling for heteroskedasticity: Fixed effects
-coeftest(m1, vcovHC) # heteroskedasticity consistent coefficients
-coeftest(m1, method='arellano') # heteroskedasticity consistent coefficients (Arellano)
-coeftest(m1, vcovHC(m1, type='HC3')) # heteroskedasticity consistent coefficients (type 3)
+coeftest(m1_fe, vcovHC) # heteroskedasticity consistent coefficients
+coeftest(m1_fe, method='arellano') # heteroskedasticity consistent coefficients (Arellano)
+coeftest(m1_fe, vcovHC(m1, type='HC3')) # heteroskedasticity consistent coefficients (type 3)
 
 # FGLS
 m1_ols <- lm(DV_VA_pc ~  DV_VA_pc_lag1 + 
@@ -415,16 +416,16 @@ summary(m1_fgls)
 
 # PCSE
 library("pcse")
-va_df$Country <- as.factor(va_df$Country)
+#va_df$Country <- as.factor(va_df$Country)
 m1_ols <- lm(DV_VA_pc ~  DV_VA_pc_lag1 +
                         IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 +
                         IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
                         IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +
                         IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
-                        C_REER + C_wgdp + C_cpi + C_wgini, data = va_df)
+                        C_REER + C_wgdp + C_cpi + C_wgini + as.factor(va_df$Year), data = va_df)
 
-m1.pcse <- pcse(m1_ols, groupN = va_df$Country, groupT = va_df$Year, pairwise = TRUE)
-summary(m1.pcse)
+m1_pcse <- pcse(m1_ols, groupN = va_df$Country, groupT = va_df$Year, pairwise = TRUE)
+summary(m1_pcse)
 ```
 
 check the countries included in the fitted model
