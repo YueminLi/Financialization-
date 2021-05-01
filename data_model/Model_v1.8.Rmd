@@ -426,6 +426,9 @@ m1_ols <- lm(DV_VA_pc ~  DV_VA_pc_lag1 +
 
 m1_pcse <- pcse(m1_ols, groupN = va_df$Country, groupT = va_df$Year, pairwise = TRUE)
 summary(m1_pcse)
+
+# lagrange multiplier test
+Lm.test(va_df$DV_VA_pc,lag.max = 1,alpha = 0.05)
 ```
 
 check the countries included in the fitted model
