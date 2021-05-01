@@ -422,7 +422,7 @@ m1_ols <- lm(DV_VA_pc ~  DV_VA_pc_lag1 +
                         IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
                         IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +
                         IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
-                        C_REER + C_wgdp + C_cpi + C_wgini + as.factor(va_df$Year), data = va_df)
+                        C_REER + C_wgdp + C_cpi + C_wgini + as.factor(va_df$Year) + as.factor(va_df$Country), data = va_df)
 
 m1_pcse <- pcse(m1_ols, groupN = va_df$Country, groupT = va_df$Year, pairwise = TRUE)
 summary(m1_pcse)
@@ -631,6 +631,19 @@ m2_fgls <- lm(formula=DV_nfc_ls_pc ~  DV_nfc_ls_pc_lag1 +
              IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
              C_REER + C_wgdp + C_cpi + C_wgini, data=nfc_fgls, weights=1/hhat)
 summary(m2_fgls)
+
+# PCSE
+library("pcse")
+#va_df$Country <- as.factor(va_df$Country)
+m2_ols <- lm(DV_nfc_ls_pc ~  DV_nfc_ls_pc_lag1 + 
+                                  IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
+             IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
+             IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
+             IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
+             C_REER + C_wgdp + C_cpi + C_wgini + as.factor(nfc_df$Year) + as.factor(nfc_df$Country), data = nfc_df)
+
+m2_pcse <- pcse(m2_ols, groupN = nfc_df$Country, groupT = nfc_df$Year, pairwise = TRUE)
+summary(m2_pcse)
 ```
 
 % of gdp
@@ -791,6 +804,18 @@ m3_fgls <- lm(formula=DV_hh_ls_pc ~  DV_hh_ls_pc_lag1 +
                         IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
              C_REER + C_wgdp + C_cpi + C_wgini, data=hh_fgls, weights=1/hhat)
 summary(m3_fgls)
+
+# PCSE
+library("pcse")
+
+m3_ols <- lm(DV_hh_ls_pc ~  DV_hh_ls_pc_lag1 + 
+                       IV_lending_pc + IV_lending_pc_lag1 + #IV_lending_pc_lag2 + 
+                       IV_gov_exp_pc + IV_gov_exp_pc_lag1 + #IV_gov_exp_pc_lag2 +
+                        IV_trade_balance_pc + IV_trade_balance_pc_lag1 + #IV_trade_balance_pc_lag2 +                            
+                        IV_fdi_net_pc + IV_fdi_net_pc_lag1 + #IV_fdi_outflow_pc_lag2 +
+             C_REER + C_wgdp + C_cpi + C_wgini + + as.factor(hh_df$Year) + as.factor(hh_df$Country), data = hh_df)
+m3_pcse <- pcse(m3_ols, groupN = hh_df$Country, groupT = hh_df$Year, pairwise = TRUE)
+summary(m3_pcse)
 ```
 
 % of gdp
