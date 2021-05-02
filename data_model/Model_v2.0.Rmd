@@ -209,7 +209,7 @@ Three PCSE models
 ```{r}
 # model 1
 va_df$Country <- as.factor(va_df$Country)
-m1_lm <- lm(DV_VA_pc ~  DV_VA_pc_lag1 + 
+m1_lm <- lm(DV_VA_pc ~  #DV_VA_pc_lag1 + 
               IV_lending_pc + IV_lending_pc_lag1+ 
               IV_gov_exp_pc + IV_gov_exp_pc_lag1 + 
               IV_trade_balance_pc + IV_trade_balance_pc_lag1 +                             
@@ -299,43 +299,50 @@ The null hypothesis in the B-P/LM and Pasaran CD tests of independence is that r
 
 Package ‘panelAR’ is used here to test the cross-sectional dependency but the package is problematic.
 
-The below tests suggest heteroskedasticity exists for fixed-effect models.
+The below tests suggest heteroskedasticity exists for OLS models.
 
 ```{r}
-m1_fe  <- plm(DV_VA_pc ~  DV_VA_pc_lag1 + 
+va_df$Country <- as.factor(va_df$Country)
+m1_pool  <- plm(DV_VA_pc ~  DV_VA_pc_lag1 + 
+              IV_lending_pc + IV_lending_pc_lag1+ 
+              IV_gov_exp_pc + IV_gov_exp_pc_lag1 + 
+              IV_trade_balance_pc + IV_trade_balance_pc_lag1 +                             
+              IV_fdi_net_pc + IV_fdi_net_pc_lag1 + 
+              C_REER + C_wgdp + C_cpi + C_wgini + as.factor(Country) + as.factor(Year),
+          data = va_df, model = 'pooling',
+          effect = 'twoways', index = c('Country', 'Year'))
+
+m2_pool  <- plm(DV_nfc_ls_pc ~  DV_nfc_ls_pc_lag1 + 
               IV_lending_pc + IV_lending_pc_lag1+ 
               IV_gov_exp_pc + IV_gov_exp_pc_lag1 + 
               IV_trade_balance_pc + IV_trade_balance_pc_lag1 +                             
               IV_fdi_net_pc + IV_fdi_net_pc_lag1 + 
               C_REER + C_wgdp + C_cpi + C_wgini,
-          data = va_df, model = 'within',
+          data = nfc_df, model = 'pooling',
           effect = 'twoways', index = c('Country', 'Year'))
 
-m2_fe  <- plm(DV_nfc_ls_pc ~  DV_nfc_ls_pc_lag1 + 
+m3_pool  <- plm(DV_hh_ls_pc ~  DV_hh_ls_pc_lag1 + 
               IV_lending_pc + IV_lending_pc_lag1+ 
               IV_gov_exp_pc + IV_gov_exp_pc_lag1 + 
               IV_trade_balance_pc + IV_trade_balance_pc_lag1 +                             
               IV_fdi_net_pc + IV_fdi_net_pc_lag1 + 
               C_REER + C_wgdp + C_cpi + C_wgini,
-          data = nfc_df, model = 'within',
+          data = hh_df, model = 'pooling',
           effect = 'twoways', index = c('Country', 'Year'))
 
+pcdtest(m1_pool, test = c("lm"))
+pcdtest(m2_pool, test = c("lm"))
+pcdtest(m3_pool, test = c("lm"))
 
-m3_fe  <- plm(DV_hh_ls_pc ~  DV_hh_ls_pc_lag1 + 
-              IV_lending_pc + IV_lending_pc_lag1+ 
-              IV_gov_exp_pc + IV_gov_exp_pc_lag1 + 
-              IV_trade_balance_pc + IV_trade_balance_pc_lag1 +                             
-              IV_fdi_net_pc + IV_fdi_net_pc_lag1 + 
-              C_REER + C_wgdp + C_cpi + C_wgini,
-          data = hh_df, model = 'within',
-          effect = 'twoways', index = c('Country', 'Year'))
+pcdtest(m1_pool, test = c("cd"))
+pcdtest(m2_pool, test = c("cd"))
+pcdtest(m3_pool, test = c("cd"))
 
-pcdtest(m1_fe, test = c("lm"))
-pcdtest(m2_fe, test = c("lm"))
-pcdtest(m3_fe, test = c("lm"))
+pcdtest(m1_pool, test = c("sclm"))
+pcdtest(m2_pool, test = c("sclm"))
+pcdtest(m3_pool, test = c("sclm"))
 
 ```
-
 #### 3.3 Testing for unit roots/stationarity
 
 The result rejects the null hypothesis that non-stationarity exists. 
@@ -373,7 +380,6 @@ bptest(DV_VA_pc ~  DV_VA_pc_lag1 +
                         IV_trade_balance_pc + IV_trade_balance_pc_lag1 +                           
                         IV_fdi_net_pc + IV_fdi_net_pc_lag1 +
                         C_REER + C_wgdp + C_cpi + C_wgini + factor(Country), data=va_df, studentize=F)
-
 
 ```
 
