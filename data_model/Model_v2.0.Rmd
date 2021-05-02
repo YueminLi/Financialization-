@@ -167,9 +167,9 @@ adf_test <- function(df, x, k = k){
 
 
 ```{r}
-VA_adf <- adf_test(df,all_of("DV_VA"),1)
-nfc_adf <- adf_test(df,all_of("DV_nfc_ls"),1)
-hh_adf <- adf_test(df,all_of("DV_hh_ls"),1)
+VA_adf <- adf_test(df, "DV_VA",1)
+nfc_adf <- adf_test(df, "DV_nfc_ls",1)
+hh_adf <- adf_test(df, "DV_hh_ls",1)
 ```
 
 Hypothesis 1: The three levels of financialization do not co-occur in all countries. 
@@ -455,12 +455,4 @@ summary(m2_pcse)
 summary(m3_pcse)
 ```
 
-#### 3.5 Durbin-Watson Test for autocorrelation
-
-```{r}
-library(car)
-durbinWatsonTest(m1_lm)
-durbinWatsonTest(m2_lm)
-durbinWatsonTest(m3_lm)
-```
 
