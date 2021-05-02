@@ -14,7 +14,9 @@ subtitle: Explaining the Rise of Financialization in a Global Perspective
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 if (!require("pacman")) install.packages("pacman"); library(pacman)
-p_load(tidyverse, knitr, kableExtra, rmarkdown, ggplot2, modelsummary, gt)
+p_load(tidyverse, knitr, kableExtra, rmarkdown, ggplot2, ggpubr, modelsummary, gt, reshape2)
+
+load("./data_model/model.RData")
 ```
 
 
@@ -58,60 +60,49 @@ The development model and the statecraft model are different in major aspects. T
 
 # Results
 
-```{r echo = FALSE, rsult = 'asis'}
-#Table for adf and correlation
-padf_table <- read.csv("./table_and_figure/padf_table.csv")
-padf_table$X <- NULL
-cor_mat <- read.csv("./table_and_figure/cor_mat.csv")
-cor_mat$X <- NULL
-t1 <- cbind(padf_table, cor_mat)
-t1 <- t1[,c(-3)]
+```{r, fig.cap="Stationarity of Financialization Measures across 39 Countries", out.height = "40%", out.weight = "40%", echo = FALSE}
+include_graphics("table_and_figure/figure1.png")
+```
 
-options(knitr.kable.NA = '')
-kable(t1,  "pipe",
-      digits = 2, booktabs = T,
-      caption = "Augmented Dickey-Fuller Test for Unit Root",
-      col.names = rep(c("Variable", "ADF Statistics",
-                        "Values added in finance activities", "Nonfinancial corporate debts", "Household debts",
-                        "Government net lending", "Government expenditure", "Net trade balance", "FDI net outflow"))) 
-
-
+```{r ip, fig.cap="Variable Correlations of The Three Models", out.height = "30%", out.weight = "30%", echo = FALSE}
+include_graphics("table_and_figure/corf.png")
 ```
 
 ```{r echo = FALSE, rsult = 'asis'}
-#table for Phillips-Ouliaris Test for Co-integration
-
-t2 <- read.csv('./table_and_figure/po.csv')
-t2$X <- NULL
-kable(t2, "pipe",
-      digit = 2, booktabs = T,
-      caption = "Phillips-Ouliaris Test for Co-integration And Correlation", 
-      col.names = rep(c("Phillips-Ouliaris demeaned","Values added in finance activities", 
-                        "Nonfinancial corporate debts", "Household debts")))
-
+#Table for model selection
+ms <- read.csv("./table_and_figure/model_selection.csv")
+kbl(ms, booktabs = T, digit = 3,
+    caption = "Model Selection Tests",
+    col.names = rep(c("", "Value Added", "NFC debts", "Household Debts"))) %>%
+  pack_rows("Breusch-Pagan LM test for cross-sectional dependence",1,2) %>%
+  pack_rows("Breusch-Pagan test for heteroskadasticity",3,4) %>%
+  pack_rows("Breusch-Godfrey test for serial correlation",5,6)
 
 ```
 
-```{r echo = FALSE, rsult = 'asis'}
-hausman <- read.csv('./table_and_figure/hausman_test.csv')
-hausman$X <- NULL
-hausman$X.1 <- NULL
-hausman$X.2 <- NULL
-kable(hausman, "pipe",
-      digit = 4, booktabs = T,
-      caption = "Hausman Test",
-      col.names = rep(c("Model", "Chi-square", "P-value", "Result"))
-      )
-```
+
 
 ```{r echo = FALSE, rsult = 'asis'}
+#Table for PCSE models
 options(modelsummary_html = 'kableExtra')
 
+m1_table <- m1_lm
+m1_table[1] <- m1_pcse[3]
+m1_table$pcse <- m1_pcse[2]
+
+m2_table <- m2_lm
+m2_table[1] <- m2_pcse[3]
+m2_table$pcse <- m2_pcse[2]
+
+m3_table <- m3_lm
+m3_table[1] <- m3_pcse[3]
+m3_table$pcse <- m3_pcse[2]
+
+
 models <- list()
-load("./table_and_figure/model.RData")
-models[['M1: Values added']] <- m1
-models[['M2: NFC debts']] <- m2_re
-models[['M3: Household debts']] <- m3
+models[['M1: Values added']] <- m1_table
+models[['M2: NFC debts']] <- m2_table
+models[['M3: Household debts']] <- m3_table
 
 cm <- c("(Intercept)" = "(Intercept)",
          'DV_VA_pc_lag1' = "Dependent variable (lag 1)",
@@ -123,47 +114,51 @@ cm <- c("(Intercept)" = "(Intercept)",
         "IV_gov_exp_pc_lag1" = "Government expenditure (lag 1)",
         "IV_trade_balance_pc" = "Net trade balance",
         "IV_trade_balance_pc_lag1" = "Net trade balance (lag 1)",
+        "IV_fdi_net_pc" = "FDI net outflows",
+        "IV_fdi_net_pc_lag1" = "FDI net outflows (lag1)",
         "C_REER" = "Real Effect Exchange Rates",
         "C_wgdp" = "GDP",
         "C_cpi" = "CPI",
         "C_wgini" = "GINI")
 
 modelsummary(models,
-         statistics = "std.error",
+         statistics = "pcse",
          stars = TRUE,
          coef_map = cm,
-         title = "Dynamic Regression Models with Panel-Corrected Standard Errors, 1978-2018") %>%
-   pack_rows("Statecraft contigency", 3, 6) %>%
-   pack_rows("Development pitfall", 7,10) %>%
-   pack_rows("Control variable", 11, 14)
+         title = "Dynamic Regression Models with Panel-Corrected Standard Errors, 1972-2018") %>%
+   pack_rows("Statecraft contigency", 5, 12) %>%
+   pack_rows("Development pitfall", 13,20) %>%
+   pack_rows("Control variable", 21, 28) 
 
 ```
 
 
 ```{r echo = FALSE, rsult = 'asis'}
-# Table for result
-model <- read.csv("./table_and_figure/model.csv")
-model$X <- NULL
+# Table for ecm
+model2 <- list()
+model2[['M4: Values added']] <- m1_ecm
+model2[['M5: NFC debts']] <- m2_ecm
+model2[['M6: Household debts']] <- m3_ecm
 
-row.names(model) <- c("Intercept", "Dependent variable (lag 1)",
-                           "Government net lending", "Government net lending (lag 1)",
-                           "Government expenditure", "Government expenditure (lag 1)",
-                           "Net trade balance", "Net trade balance (lag 1)",
-                           "FDI net outflows", "FDI net outflows (lag1)",
-                           "Real Effect Exchange Rates", "GDP", "CPI", "GINI",
-                      "R-Square", "N")
+cm2 <- c("(Intercept)" = "(Intercept)",
+         'ylag1' = "Dependent variable (lag 1)",
+        'deltaIV_lending_pc' = "Government net lending",
+         "IV_lending_pcLag1" = "Government net lending (lag 1)",
+        "deltaIV_gov_exp_pc" = "Government expenditure",
+        "IV_gov_exp_pcLag1" = "Government expenditure (lag 1)",
+        "deltaIV_trade_balance_pc" = "Net trade balance",
+        "IV_trade_balance_pcLag1" = "Net trade balance (lag 1)",
+        "deltaIV_fdi_net_pc" = "FDI net outflows",
+        "IV_fdi_net_pcLag1" = "FDI net outflows (lag1)",
+        "C_REER" = "Real Effect Exchange Rates",
+        "C_wgdp" = "GDP",
+        "C_cpi" = "CPI",
+        "C_wgini" = "GINI")
 
-
-kbl(model,longtable = T, booktabs = T, digit = 4,
-    caption = "Dynamic Regression Models with Panel-Corrected Standard Errors, 1978-2018",
-        col.names = rep(c("Estimate","Std. Error",
-                           "Estimate","Std. Error",
-                          "Estimate","Std. Error"))) %>%
-   add_header_above(c("","M1: Values added" = 2, "M2: NFC debts" = 2, "M3: Household debts" = 2)) %>%
-   pack_rows("Statecraft contigency", 3, 6) %>%
-   pack_rows("Development pitfall", 7,10) %>%
-   pack_rows("Control variable", 11, 14) %>%
-      kable_styling(latex_options = c("repeat_header"))
+modelsummary(model2,
+         statistics = "Std. Error",
+         stars = TRUE,
+         coef_map = cm2,
+         title = "Error Correction Models, 1972-2018") 
 
 ```
-

@@ -432,19 +432,22 @@ lmtest::bgtest(DV_hh_ls_pc ~  DV_hh_ls_pc_lag1 +
 
 ```{r}
 p_load('ecm')
-xeq <- xtr <- va_df[c('IV_lending_pc', 'IV_gov_exp_pc', 'IV_trade_balance_pc', 'IV_fdi_net_pc','C_REER', 'C_wgdp', 'C_cpi', 'C_wgini')]
+xtr <- va_df[c('IV_lending_pc', 'IV_gov_exp_pc', 'IV_trade_balance_pc', 'IV_fdi_net_pc','C_REER', 'C_wgdp', 'C_cpi', 'C_wgini')]
+xeq <- va_df[c('IV_lending_pc', 'IV_gov_exp_pc', 'IV_trade_balance_pc', 'IV_fdi_net_pc')]
 m1_ecm <- ecm(va_df$DV_VA_pc, xeq, xtr, includeIntercept=TRUE)
 lmtest::bptest(m1_ecm)
 lmtest::bgtest(m1_ecm)
 lmtest::coeftest(m1_ecm, vcov=sandwich::NeweyWest)
 
-xeq <- xtr <- nfc_df[c('IV_lending_pc', 'IV_gov_exp_pc', 'IV_trade_balance_pc', 'IV_fdi_net_pc','C_REER', 'C_wgdp', 'C_cpi', 'C_wgini')]
+xtr <- nfc_df[c('IV_lending_pc', 'IV_gov_exp_pc', 'IV_trade_balance_pc', 'IV_fdi_net_pc','C_REER', 'C_wgdp', 'C_cpi', 'C_wgini')]
+xeq <- nfc_df[c('IV_lending_pc', 'IV_gov_exp_pc', 'IV_trade_balance_pc', 'IV_fdi_net_pc')]
 m2_ecm <- ecm(nfc_df$DV_nfc_ls_pc, xeq, xtr, includeIntercept=TRUE)
 lmtest::bptest(m2_ecm)
 lmtest::bgtest(m2_ecm)
 lmtest::coeftest(m2_ecm, vcov=sandwich::NeweyWest)
 
-xeq <- xtr <- hh_df[c('IV_lending_pc', 'IV_gov_exp_pc', 'IV_trade_balance_pc', 'IV_fdi_net_pc','C_REER', 'C_wgdp', 'C_cpi', 'C_wgini')]
+xtr <- hh_df[c('IV_lending_pc', 'IV_gov_exp_pc', 'IV_trade_balance_pc', 'IV_fdi_net_pc','C_REER', 'C_wgdp', 'C_cpi', 'C_wgini')]
+xeq <- hh_df[c('IV_lending_pc', 'IV_gov_exp_pc', 'IV_trade_balance_pc', 'IV_fdi_net_pc')]
 m3_ecm <- ecm(hh_df$DV_hh_ls_pc, xeq, xtr, includeIntercept=TRUE)
 lmtest::bptest(m3_ecm)
 lmtest::bgtest(m3_ecm)
@@ -456,8 +459,5 @@ summary(m3_pcse)
 ```
 
 ```{r}
-save(m1_lm, m1_pcse,m1_ecm,
-     m2_lm, m2_pcse, m2_ecm,
-     m3_lm, m3_pcse, m3_ecm,
-     file = "../table_and_figure/models.RData")
+save.image("../data_model/model.RData")
 ```

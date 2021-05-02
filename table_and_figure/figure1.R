@@ -1,5 +1,6 @@
 library(pacman)
-p_load(ggpubr, ggtext, tidyverse)
+p_load(ggpubr, ggtext, tidyverse, reshape2)
+load("./data_model/model.RData")
 #setwd("~/Downloads/GitHub/Hegemony_Pitfall_or_Statecraft_Toolkit")
 df <- read.csv("../data_processing/financialization_df.csv")
 df$X <- NULL
@@ -114,5 +115,86 @@ ggsave(
   height = 8,
   units = c("in", "cm", "mm"),
   dpi = 320)
+
+
+
+## Correlations
+va_cor <- va_df %>%
+  select(- Year, -Country, -DV_VA_pc)
+colnames(va_cor) = c("DV lag",
+                     "GNL", "GNL lag",
+                     "GE", "GE lag",
+                     "NTB", "NTB lag",
+                     "FNO", "FNO lag",
+                     "REER", "GDP", "CPI", "GINI")
+va_cormat <- round(cor(va_cor),2)
+melted_va <- melt(va_cormat)
+corf_va <- ggplot(data = melted_va, aes(x=Var1, y=Var2, fill=value)) + 
+  geom_tile() +
+  scale_fill_gradient2(midpoint=0,
+                       low="#2dacb8", mid = "#ffffff",high="#fb7d5f") +
+  xlab("") + 
+  ylab("") + 
+  theme(axis.text.x = element_text(angle = 60, vjust = 0.5, hjust=1))
+
+
+
+nfc_cor <- nfc_df %>%
+  select(- Year, -Country, -DV_nfc_ls_pc)
+colnames(nfc_cor) = c("NFC lag",
+                      "GNL", "GNL lag",
+                      "GE", "GE lag",
+                      "NTB", "NTB lag",
+                      "FNO", "FNO lag",
+                      "REER", "GDP", "CPI", "GINI")
+nfc_cormat <- round(cor(nfc_cor),2)
+melted_nfc <- melt(nfc_cormat)
+corf_nfc <- ggplot(data = melted_nfc, aes(x=Var1, y=Var2, fill=value)) + 
+  geom_tile() +
+  scale_fill_gradient2(midpoint=0,
+                       low="#2dacb8", mid = "#ffffff",high="#fb7d5f")+
+  xlab("") + 
+  ylab("") + 
+  theme(axis.text.x = element_text(angle = 60, vjust = 0.5, hjust=1))
+
+
+
+hh_cor <- hh_df %>%
+  select(- Year, -Country, -DV_hh_ls_pc)
+colnames(hh_cor) = c("HD lag",
+                     "GNL", "GNL lag",
+                     "GE", "GE lag",
+                     "NTB", "NTB lag",
+                     "FNO", "FNO lag",
+                     "REER", "GDP", "CPI", "GINI")
+hh_cormat <- round(cor(hh_cor),2)
+melted_hh <- melt(hh_cormat)
+corf_hh <- ggplot(data = melted_hh, aes(x=Var1, y=Var2, fill=value)) + 
+  geom_tile() +
+  scale_fill_gradient2(midpoint=0,
+                       low="#2dacb8", mid = "#ffffff",high="#fb7d5f")+
+  xlab("") + 
+  ylab("") + 
+  theme(axis.text.x = element_text(angle = 60, vjust = 0.5, hjust=1))
+
+
+#library(ggpubr)
+corf <- ggarrange(corf_va, corf_nfc, corf_hh, 
+                  labels = c("", "", ""),
+                  ncol = 3, nrow = 1,
+                  legend = "bottom") 
+corf
+
+ggsave(
+  "corf.png",
+  plot = last_plot(),
+  device = NULL,
+  path = "./table_and_figure",
+  scale = 1,
+  width = 11.5,
+  height = 4.5,
+  units = c("in", "cm", "mm"),
+  dpi = 320)
+
 
 

@@ -1,0 +1,7 @@
+Statistics,DV_VA_pc,DV_nfc_ls_pc,DV_hh_ls_pc
+Chi-square,616.16,597.8,960.89
+p-value,0,0.0000,0.0000
+Breusch-Pagan,263.11,410.62,1834.5
+p-value,0,0,0
+Lagrange Multiplier,1.5878,10.94,53.794
+p-value,0.2076,0.0009411,0.0000
