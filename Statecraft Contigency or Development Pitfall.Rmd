@@ -60,9 +60,15 @@ The development model and the statecraft model are different in major aspects. T
 
 # Results
 
+
+
+```{=latex}
+\begin{figure}[t]
+```
 ```{r, fig.cap="Stationarity of Financialization Measures across 39 Countries", out.height = "40%", out.weight = "40%", echo = FALSE}
 include_graphics("table_and_figure/figure1.png")
 ```
+
 
 ```{r ip, fig.cap="Variable Correlations of The Three Models", out.height = "30%", out.weight = "30%", echo = FALSE}
 include_graphics("table_and_figure/corf.png")
@@ -125,7 +131,7 @@ modelsummary(models,
          statistics = "pcse",
          stars = TRUE,
          coef_map = cm,
-         title = "Dynamic Regression Models with Panel-Corrected Standard Errors, 1972-2018") %>%
+         title = "Dynamic Regression Models with Panel-Corrected Standard Errors, 1972-2012") %>%
    pack_rows("Statecraft contigency", 5, 12) %>%
    pack_rows("Development pitfall", 13,20) %>%
    pack_rows("Control variable", 21, 28) 
@@ -150,15 +156,18 @@ cm2 <- c("(Intercept)" = "(Intercept)",
         "IV_trade_balance_pcLag1" = "Net trade balance (lag 1)",
         "deltaIV_fdi_net_pc" = "FDI net outflows",
         "IV_fdi_net_pcLag1" = "FDI net outflows (lag1)",
-        "C_REER" = "Real Effect Exchange Rates",
-        "C_wgdp" = "GDP",
-        "C_cpi" = "CPI",
-        "C_wgini" = "GINI")
+        "deltaC_REER" = "Real Effect Exchange Rates",
+        "deltaC_wgdp" = "GDP",
+        "deltaC_cpi" = "CPI",
+        "deltaC_wgini" = "GINI")
 
 modelsummary(model2,
          statistics = "Std. Error",
          stars = TRUE,
          coef_map = cm2,
-         title = "Error Correction Models, 1972-2018") 
+         title = "Error Correction Models, 1972-2012") %>%
+   pack_rows("Statecraft contigency", 3, 10) %>%
+   pack_rows("Development pitfall", 11,18) %>%
+   pack_rows("Control variable", 19,26) 
 
 ```
