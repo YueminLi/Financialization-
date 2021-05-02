@@ -455,4 +455,9 @@ summary(m2_pcse)
 summary(m3_pcse)
 ```
 
-
+```{r}
+save(m1_lm, m1_pcse,m1_ecm,
+     m2_lm, m2_pcse, m2_ecm,
+     m3_lm, m3_pcse, m3_ecm,
+     file = "../table_and_figure/models.RData")
+```
