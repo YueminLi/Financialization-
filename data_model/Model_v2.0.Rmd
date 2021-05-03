@@ -365,6 +365,18 @@ padf <- function(df, x){
 padf(va_df, "DV_VA_pc")
 padf(nfc_df, "DV_nfc_ls_pc")
 padf(hh_df, "DV_hh_ls_pc")
+padf(va_df, "IV_lending_pc")
+padf(va_df, "IV_gov_exp_pc")
+padf(va_df, "IV_trade_balance_pc")
+padf(va_df, "IV_fdi_net_pc")
+padf(nfc_df, "IV_lending_pc")
+padf(nfc_df, "IV_gov_exp_pc")
+padf(nfc_df, "IV_trade_balance_pc")
+padf(nfc_df, "IV_fdi_net_pc")
+padf(hh_df, "IV_lending_pc")
+padf(hh_df, "IV_gov_exp_pc")
+padf(hh_df, "IV_trade_balance_pc")
+padf(hh_df, "IV_fdi_net_pc")
 ```
 
 #### 3.4 test for heteroskedasticity 
