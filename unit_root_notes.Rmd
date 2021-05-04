@@ -1,0 +1,64 @@
+---
+title: "Stationarity_notes"
+author: "Yuemin Li and Yimang Zhou"
+date: "5/4/2021"
+output: html_document
+---
+```{r, include = FALSE}
+library(pacman)
+p_load(tidyverse, plm)
+data("Grunfeld", package = "plm")
+p_load(fBasics,fUnitRoots)
+if (!require("punitroots"))install.packages("punitroots", repos="http://R-Forge.R-project.org")
+if (!require("CADFtest"))install.packages("CADFtest")
+#install.packages("ua")
+library(punitroots)
+```
+
+We now have three ways for stationarity. I use the df "Grunfeld" here, which is a balanced database.
+
+# Method 1: purtest from plm package
+```{r}
+purtest(inv ~ 1, data = Grunfeld, index = c("firm", "year"), pmax = 4, test = "madwu", lag ="AIC")
+```
+
+# Method 2: pCADFtest
+
+```{r}
+padf <- function(df, x, index = NULL){
+  df %>%
+    select(firm, year, x) -> iv
+  #iv <- na.omit(iv)
+  iv_spread <- spread(iv,"firm", x)
+  iv_spread <- iv_spread[,-1]
+  result = pCADFtest(Y=iv_spread, criterion = "AIC", crosscorr=0.10)
+  print(result)
+}
+```
+
+```{r}
+padf(Grunfeld, "inv")
+```
+
+# Method 3: Function adf
+# Link: http://www.econ.uiuc.edu/~econ508/R/e-ta8_R.html
+
+```{r}
+"adf" <- function(x,k = 0, int = TRUE, trend = FALSE){
+# NB:  returns conventional lm summary so p-values for adf test are wrong!
+    require(dynlm)
+    dx <- diff(x)
+    formula <- paste("dx ~ L(x)")
+    if(k > 0)
+        formula <- paste(formula," + L(dx,1:k)")
+    if(trend){
+        s <- time(x)
+        t <- ts(s - s[1],start = s[1],freq = frequency(x))
+        formula <- paste(formula," + t")
+        }
+    if(!int) formula <- paste(formula," - 1")
+    summary(dynlm(as.formula(formula)))
+}
+```
+
+adf 

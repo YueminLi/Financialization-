@@ -143,13 +143,12 @@ adf_test <- function(df, x, k = k){
                         stationarity = c())
    df %>%
      select(Country, Year, x) -> iv
-   iv <- na.omit(iv)
+   #iv <- na.omit(iv)
    iv$Country <- as.character(iv$Country)
    country <- data.frame(table(iv$Country))[,1]
    for(i in 1:length(country)){
      countryname = as.character(country[i])
-     temp <- iv %>%
-       filter(Country == countryname)
+     temp <- iv[iv$Country %in% countryname,]
      adf_iv <- ts(temp[,3])
      adf(adf_iv, k = k, int = T, trend = T) -> adf_model
      adf_model$coefficient[2,3] -> lx_t
@@ -347,7 +346,16 @@ pcdtest(m3_pool, test = c("sclm"))
 
 The result rejects the null hypothesis that non-stationarity exists. 
 
+The code in previous versions for this part is incorrect.
+See https://stats.stackexchange.com/questions/33364/unit-root-tests-for-panel-data-in-r
+
+
 ```{r}
+
+
+
+
+
 p_load(fBasics,fUnitRoots)
 if (!require("punitroots"))install.packages("punitroots", repos="http://R-Forge.R-project.org")
 if (!require("CADFtest"))install.packages("CADFtest")
@@ -358,7 +366,9 @@ padf <- function(df, x){
   df %>%
     select(Country, Year, x) -> iv
   iv <- na.omit(iv)
-  result = pCADFtest(Y=iv, max.lag.y = 5, criterion = "AIC", crosscorr=0.10)
+  iv_spread <- spread(iv, Country, colnames(iv[,3]))
+  iv_spread <- iv_spread[,-1]
+  result = pCADFtest(Y=iv_spread, criterion = "AIC", crosscorr=0.10)
   print(result)
 }
 

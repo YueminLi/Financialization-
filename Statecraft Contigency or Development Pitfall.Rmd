@@ -58,13 +58,83 @@ The development model and the statecraft model are different in major aspects. T
 
 # Data and Method
 
+```{r echo = FALSE, rsult = 'asis'}
+# Table for descriptive statistics and sources
+p_load(DataCombine)
+varnames = c("DV_VA_pc",
+             "IV_lending_pc", "IV_gov_exp_pc", "IV_trade_balance_pc", "IV_fdi_net_pc",
+             "C_REER", "C_wgdp","C_cpi","C_wgini")
+desc_va <- data.frame()
+for(varname in varnames){
+  mean <- summary(unlist(va_df[,varname]))[4]
+  median <- summary(unlist(va_df[,varname]))[3]
+  sd <- sd(unlist(va_df[,varname]))
+  newrow <- c(mean,median, sd)
+  desc_va <- rbind(desc_va, newrow)
+}
+
+varnames = c("DV_nfc_ls_pc",
+             "IV_lending_pc", "IV_gov_exp_pc", "IV_trade_balance_pc", "IV_fdi_net_pc",
+             "C_REER", "C_wgdp","C_cpi","C_wgini")
+desc_nfc<- data.frame()
+for(varname in varnames){
+  mean <- summary(unlist(nfc_df[,varname]))[4]
+  median <- summary(unlist(nfc_df[,varname]))[3]
+  sd <- sd(unlist(nfc_df[,varname]))
+  newrow <- c(mean,median, sd)
+  desc_nfc <- rbind(desc_nfc, newrow)
+}
+
+varnames = c("DV_hh_ls_pc",
+             "IV_lending_pc", "IV_gov_exp_pc", "IV_trade_balance_pc", "IV_fdi_net_pc",
+             "C_REER", "C_wgdp","C_cpi","C_wgini")
+desc_hh <- data.frame()
+for(varname in varnames){
+  mean <- summary(unlist(hh_df[,varname]))[4]
+  median <- summary(unlist(hh_df[,varname]))[3]
+  sd <- sd(unlist(hh_df[,varname]))
+  newrow <- c(mean,median, sd)
+  desc_hh <- rbind(desc_hh, newrow)
+}
+
+
+desc_va <- InsertRow(desc_va, c(NA,NA, NA), RowNum =2)
+desc_va <- InsertRow(desc_va, c(NA,NA, NA), RowNum =2)
+
+desc_nfc <- InsertRow(desc_nfc, c(NA,NA, NA), RowNum =1)
+desc_nfc <- InsertRow(desc_nfc, c(NA,NA, NA), RowNum =3)
+
+desc_hh <- InsertRow(desc_hh, c(NA,NA, NA), RowNum =1)
+desc_hh <- InsertRow(desc_hh, c(NA,NA, NA), RowNum =2)
+
+desc <- cbind(desc_va, desc_nfc, desc_hh)
+
+
+rownames <- c("Value added in financial activities (%)", "Nonfinancial corporation debts (%)", "Household debt (%)",
+              "Government net lending (%)", "Government expenditure (%)",
+              "Net trade balance (%)", "FDI net outflows (%)", 
+              "Real Effect Exchange Rates", "GDP (Million Dollars)", "CPI", "GINI")
+desc <- cbind(rownames, desc)
+
+
+source <- c("OECD","IMF", "IMF",
+           "OECD", "IMF","World Bank", "World Bank", "OECD", "WIID", "OECD","WIID")
+desc <- cbind(desc, source)
+
+kbl(desc, booktabs = T, digit = 3,
+    caption = "Descriptive Statistics for The Variables in the Models",
+    col.names = rep(c("", "Mean", "Median", "S.D.", "Mean", "Median", "S.D.", "Mean", "Median", "S.D.", "source"))) %>%
+  add_header_above(c("","Value Added" = 3, "NFC debts" = 3, "Household Debts" = 3, "")) %>%
+kable_styling(font_size = 3)
+
+```
+
+
 # Results
 
 
 
-```{=latex}
-\begin{figure}[t]
-```
+
 ```{r, fig.cap="Stationarity of Financialization Measures across 39 Countries", out.height = "40%", out.weight = "40%", echo = FALSE}
 include_graphics("table_and_figure/figure1.png")
 ```
@@ -81,12 +151,22 @@ kbl(ms, booktabs = T, digit = 3,
     caption = "Model Selection Tests",
     col.names = rep(c("", "Value Added", "NFC debts", "Household Debts"))) %>%
   pack_rows("Breusch-Pagan LM test for cross-sectional dependence",1,2) %>%
-  pack_rows("Breusch-Pagan test for heteroskadasticity",3,4) %>%
-  pack_rows("Breusch-Godfrey test for serial correlation",5,6)
+  pack_rows("Pesaran CD test for cross-sectional dependence", 3,4) %>%
+  pack_rows("Scaled LM test for cross-sectional dependence", 5,6) %>%
+  pack_rows("Breusch-Pagan test for heteroskadasticity",7,8) %>%
+  pack_rows("Breusch-Godfrey test for serial correlation",9,10)
 
 ```
 
+```{r echo = FALSE, rsult = 'asis'}
+#Table for phillips-ouliaris 
+po <- read.csv("table_and_figure/phillips-ouliaris.csv")
+kbl(po, booktabs = T, digit = 3,
+    caption = "Phillips-Ouliaris Tests for Cointegration", 
+    col.names = rep(c("","statistics", "p-value", "statistics", "p-value", "statistics", "p-value" ))) %>%
+  add_header_above(c("","Value Added" = 2, "NFC debts" = 2, "Household Debts" = 2)) 
 
+```
 
 ```{r echo = FALSE, rsult = 'asis'}
 #Table for PCSE models
@@ -131,6 +211,7 @@ modelsummary(models,
          statistics = "pcse",
          stars = TRUE,
          coef_map = cm,
+         fmt = 4,
          title = "Dynamic Regression Models with Panel-Corrected Standard Errors, 1972-2012") %>%
    pack_rows("Statecraft contigency", 5, 12) %>%
    pack_rows("Development pitfall", 13,20) %>%
@@ -165,6 +246,7 @@ modelsummary(model2,
          statistics = "Std. Error",
          stars = TRUE,
          coef_map = cm2,
+         fmt = 4,
          title = "Error Correction Models, 1972-2012") %>%
    pack_rows("Statecraft contigency", 3, 10) %>%
    pack_rows("Development pitfall", 11,18) %>%
