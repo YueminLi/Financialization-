@@ -61,4 +61,11 @@ padf(Grunfeld, "inv")
 }
 ```
 
-adf 
+# Method 4
+
+```{r}
+temp <- data.frame(split(df$DV_VA_pc, df$Country))
+pfisher(temp, method = "invchisq", 
+            N = 20, exo ="trend", 
+            lags = 4)
+```

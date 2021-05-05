@@ -1,25 +1,15 @@
 library(pacman)
 p_load(ggpubr, ggtext, tidyverse, reshape2)
 load("./data_model/model.RData")
-#setwd("~/Downloads/GitHub/Hegemony_Pitfall_or_Statecraft_Toolkit")
-df <- read.csv("../data_processing/financialization_df.csv")
-df$X <- NULL
-df <- df %>%
-  filter(Year >= 1960) 
-colnames(df)
-df[df==0] <- NA
-df$Country[duplicated(cbind(df$Country, df$Year))]
-df <- df[!duplicated(cbind(df$Country, df$Year)),]
-df <- df[order(df$Country, df$Year),]
 
 #library(ggplot2)
-f1 <- select(df, 
+f1 <- select(df_model, 
              Year, Country, DV_VA, DV_nfc_ls, DV_hh_ls)
 f1 <- na.omit(f1)
 f1 <- f1[order(f1$Country, f1$Year),]
 
 # merge f1 with the ADF test results
-variety <- read_rds("variety.rds")
+variety <- read_rds("../table_and_figure/variety.rds")
 f1 <- merge(f1, variety, by.x = "Country", by.y = "country", all.x = T)
 
 #financialization <- (1/2-as.numeric(f1$stationarity=="non-stationarity"))*(-2)

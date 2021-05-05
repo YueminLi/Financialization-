@@ -59,6 +59,7 @@ The development model and the statecraft model are different in major aspects. T
 # Data and Method
 
 ```{r echo = FALSE, rsult = 'asis'}
+options(knitr.kable.NA = '')
 # Table for descriptive statistics and sources
 p_load(DataCombine)
 varnames = c("DV_VA_pc",
@@ -159,12 +160,14 @@ kbl(ms, booktabs = T, digit = 3,
 ```
 
 ```{r echo = FALSE, rsult = 'asis'}
+options(knitr.kable.NA = '')
 #Table for phillips-ouliaris 
-po <- read.csv("table_and_figure/phillips-ouliaris.csv")
+po <- read.csv("table_and_figure/adf-phillips-ouliaris.csv")
 kbl(po, booktabs = T, digit = 3,
-    caption = "Phillips-Ouliaris Tests for Cointegration", 
-    col.names = rep(c("","statistics", "p-value", "statistics", "p-value", "statistics", "p-value" ))) %>%
-  add_header_above(c("","Value Added" = 2, "NFC debts" = 2, "Household Debts" = 2)) 
+    caption = "Fisher Type Unit Root Tests for Stationarity and Phillips-Ouliaris Tests for Cointegration", 
+    col.names = rep(c("","Chi-Square", "p-value","statistics", "p-value", "statistics", "p-value", "statistics", "p-value" ))) %>%
+  add_header_above(c("","Unit Root" = 2,"Value Added" = 2, "NFC debts" = 2, "Household Debts" = 2))  %>%
+kable_styling(font_size = 7)
 
 ```
 

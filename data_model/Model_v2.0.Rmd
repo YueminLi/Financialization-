@@ -9,12 +9,19 @@ output:
 
 - A final version close to the paper.
 - Rmarkdown for the paper should use model results from this version.
+- The adf tests in previous versions are incorrect.
 - The last version is Model_v1.8
 
 ```{r}
 if (!require("pacman")) install.packages("pacman")
 p_load(data.table, tidyverse, Hmisc, Matrix, lfe, plm, dynlm, car, lmtest, tseries, broom, knitr,
        pcse, ecm)
+
+p_load(fBasics,fUnitRoots)
+if (!require("punitroots"))install.packages("punitroots", repos="http://R-Forge.R-project.org")
+if (!require("CADFtest"))install.packages("CADFtest")
+#install.packages("ua")
+library(punitroots)
 ```
 
 ## 0. Data Preprocessing
@@ -108,68 +115,73 @@ This part attempts to select countries experience financialization since 1960. W
 A unit root is present if $\rho = 1$ in $y_{t} = \rho y_{t-1}+u_{t}$.
 If the null hypothesis is not rejected, a unit root is present and the variable is not stationary. Instead, a variable is stationary if the null hypothesis is reject. 
 
-Define adf function (http://www.econ.uiuc.edu/~econ508/R/e-ta8_R.html)
+Define adftest function based on pfisher()
 
 ```{r}
-"adf" <- function(x,k = 0, int = TRUE, trend = FALSE){
-# NB:  returns conventional lm summary so p-values for adf test are wrong!
-    require(dynlm)
-    dx <- diff(x)
-    formula <- paste("dx ~ L(x)")
-    if(k > 0)
-        formula <- paste(formula," + L(dx,1:k)")
-    if(trend){
-        s <- time(x)
-        t <- ts(s - s[1],start = s[1],freq = frequency(x))
-        formula <- paste(formula," + t")
-        }
-    if(!int) formula <- paste(formula," - 1")
-    summary(dynlm(as.formula(formula)))
+adftest <- function(df = NULL, var = NULL, panel = NULL, time = NULL, k = 0){
+  temp1 <- df %>%
+    select(var, panel, time)
+  temp2 <- pdata.frame(temp1,
+                       index = c(panel, time))
+  temp3 <- make.pbalanced(temp2,
+                          balance.type = "fill")
+  adf_df <- data.frame(split(temp3[,1], temp3[,2]))
+  
+  pfisher(adf_df, method = "invchisq", 
+          N = Inf, exo ="trend", 
+          lags = k)
+}
+```
+
+Use the afttest() to test stationarity in each country 
+
+```{r}
+countries <- unique(df_model$Country)
+
+va_stationarity <- data.frame()
+for(country in countries){
+  country_temp <- df_model[df_model$Country == country,]
+  result <- adftest(df = country_temp, var = "DV_VA", panel = "Country", time = "Year", k = 1)
+  ch2 <- as.numeric(result[1])
+  pvalue <- as.numeric(result[6])
+  stationarity <- NA
+  stationarity[pvalue <=0.1] <- "stationarity"
+  stationarity[pvalue > 0.1] <- "non-stationarity"
+  newrow <- cbind(country, ch2, pvalue, stationarity)
+  colnames(newrow) <- c("Country","chi2","pvalue","stationarity")
+  va_stationarity <- rbind(va_stationarity, newrow)
+}
+
+nfc_stationarity <- data.frame()                              
+for(country in countries){
+  country_temp <- df_model[df_model$Country == country,]
+  result <- adftest(df = country_temp, var = "DV_nfc_ls", panel = "Country", time = "Year", k = 1)
+  ch2 <- as.numeric(result[1])
+  pvalue <- as.numeric(result[6])
+  stationarity <- NA
+  stationarity[pvalue <=0.1] <- "stationarity"
+  stationarity[pvalue > 0.1] <- "non-stationarity"
+  newrow <- cbind(country, ch2, pvalue, stationarity)
+  colnames(newrow) <- c("Country","chi2","pvalue","stationarity")
+  nfc_stationarity <- rbind(nfc_stationarity, newrow)
+}
+
+hh_stationarity <- data.frame()                              
+for(country in countries){
+  country_temp <- df_model[df_model$Country == country,]
+  result <- adftest(df = country_temp, var = "DV_nfc_ls", panel = "Country", time = "Year", k = 1)
+  ch2 <- as.numeric(result[1])
+  pvalue <- as.numeric(result[6])
+  stationarity <- NA
+  stationarity[pvalue <=0.1] <- "stationarity"
+  stationarity[pvalue > 0.1] <- "non-stationarity"
+  newrow <- cbind(country, ch2, pvalue, stationarity)
+  colnames(newrow) <- c("Country","chi2","pvalue","stationarity")
+  hh_stationarity <- rbind(hh_stationarity, newrow)
 }
 ```
 
 
-ADF test for each country
-Generate adf_test() function, the strategy is:
-1. extract the column of independent variable X from df
-2. for a certain country C, use adf() function to calculate the augmented Dickey-Fuller statistic for rejecting non-stationarity
-3. combine the results from all countries together and report
-
-```{r}
-adf_test <- function(df, x, k = k){
-   result <- data.frame(country = c(),
-                        lx_t = c(),
-                        lx_p = c(),
-                        stationarity = c())
-   df %>%
-     select(Country, Year, x) -> iv
-   #iv <- na.omit(iv)
-   iv$Country <- as.character(iv$Country)
-   country <- data.frame(table(iv$Country))[,1]
-   for(i in 1:length(country)){
-     countryname = as.character(country[i])
-     temp <- iv[iv$Country %in% countryname,]
-     adf_iv <- ts(temp[,3])
-     adf(adf_iv, k = k, int = T, trend = T) -> adf_model
-     adf_model$coefficient[2,3] -> lx_t
-     adf_model$coefficient[2,4] -> lx_p
-     stationarity = c()
-     stationarity[lx_p < 0.05] <- "stationarity"
-     stationarity[lx_p > 0.05] <- "non-stationarity"
-     newrow <- c(countryname, lx_t, lx_p, stationarity)
-     result <- rbind(result, newrow)
-   }
-   colnames(result) <- c("country","lx_t","lx_p","stationarity")
-   print(result)
-}
-```
-
-
-```{r}
-VA_adf <- adf_test(df, "DV_VA",1)
-nfc_adf <- adf_test(df, "DV_nfc_ls",1)
-hh_adf <- adf_test(df, "DV_hh_ls",1)
-```
 
 Hypothesis 1: The three levels of financialization do not co-occur in all countries. 
 
@@ -180,13 +192,11 @@ First, many countries find some kind of financialization. Only a few countries d
 Second, only a few countries find all the three levels of financialization (Australia, Israel, Italy, Slovak). Even in the U.S., financialization shows only in the level of the market and corporation. In most countries, the three levels of financialization do not co-occur.
 
 ```{r}
-variety <- merge(VA_adf, nfc_adf, by = "country", all.y = T)
-variety <- merge(variety, hh_adf, by = "country", all.y = T)
-variety <- select(variety,
-                  country, stationarity.x, stationarity.y, stationarity)
-variety <- variety[,c("country", "stationarity.x", "stationarity.y", "stationarity")]
+variety <- cbind(va_stationarity$Country, va_stationarity$stationarity,
+                 nfc_stationarity$stationarity, hh_stationarity$stationarity)
 colnames(variety) <- c("country", "va", "nfc", "hh")
 variety
+save(variety, file = "../table_and_figure/variety.rds")
 ```
 
 ## 2. PCSE Models
@@ -249,7 +259,29 @@ summary(m3_pcse)
 
 ## 3. Diagnosis
 
-### 3.1 Phillips-Ouliaris test of Cointegration
+#### 3.1 Testing for unit roots/stationarity
+
+The result rejects the null hypothesis that non-stationarity exists. 
+
+The code in previous versions for this part is incorrect.
+See https://stats.stackexchange.com/questions/33364/unit-root-tests-for-panel-data-in-r
+
+
+```{r}
+
+adftest(df = df_model, var = "DV_VA_pc", panel = "Country", time = "Year", k = 0)
+adftest(df = df_model, var = "DV_nfc_ls_pc", panel = "Country", time = "Year", k = 0)
+adftest(df = df_model, var = "DV_hh_ls_pc", panel = "Country", time = "Year", k = 0)
+adftest(df = df_model, var = "IV_lending_pc", panel = "Country", time = "Year", k = 0)
+adftest(df = df_model, var = "IV_gov_exp_pc", panel = "Country", time = "Year", k = 0)
+adftest(df = df_model, var = "IV_trade_balance_pc", panel = "Country", time = "Year", k = 0)
+adftest(df = df_model, var = "IV_fdi_net_pc", panel = "Country", time = "Year", k = 0)
+
+
+```
+
+
+### 3.2 Phillips-Ouliaris test of Cointegration
 
 "Cointegration is a technique used to find a possible correlation between time series processes in the long term. Nobel laureates Robert Engle and Clive Granger introduced the concept of cointegration in 1987. The most popular cointegration tests include Engle-Granger, the Johansen Test, and the Phillips-Ouliaris test."
 
@@ -287,9 +319,16 @@ po_hh <- rbind(as.numeric(po_hh_lending[1]), as.numeric(po_hh_exp[1]),
                as.numeric(po_hh_trade[1]), as.numeric(po_hh_fdi[1]))
 
 po_hh
+
+# Two alternative methods
+# https://statcompute.wordpress.com/tag/time-series/
+urca::ca.po(cbind(va_df$DV_VA_pc, va_df$IV_lending_pc), demean = "constant", lag = "short", type = "Pu")
+urca::ca.po(cbind(va_df$DV_VA_pc, va_df$IV_lending_pc), demean = "constant", lag = "short", type = "Pz")
+
+
 ```
 
-#### 3.2 Test of Cross-sectional Dependence (Contemporaneous Correlations)
+#### 3.3 Test of Cross-sectional Dependence (Contemporaneous Correlations)
 
 Panel data can be subject to pervasive cross-sectional dependence, whereby all units in the same cross-section are correlated. This is usually attributed to the effect of some unobserved common factors, common to all units and affecting each of them, although possibly in different ways. 
 
@@ -341,52 +380,6 @@ pcdtest(m1_pool, test = c("sclm"))
 pcdtest(m2_pool, test = c("sclm"))
 pcdtest(m3_pool, test = c("sclm"))
 
-```
-#### 3.3 Testing for unit roots/stationarity
-
-The result rejects the null hypothesis that non-stationarity exists. 
-
-The code in previous versions for this part is incorrect.
-See https://stats.stackexchange.com/questions/33364/unit-root-tests-for-panel-data-in-r
-
-
-```{r}
-
-
-
-
-
-p_load(fBasics,fUnitRoots)
-if (!require("punitroots"))install.packages("punitroots", repos="http://R-Forge.R-project.org")
-if (!require("CADFtest"))install.packages("CADFtest")
-#install.packages("ua")
-library(punitroots)
-
-padf <- function(df, x){
-  df %>%
-    select(Country, Year, x) -> iv
-  iv <- na.omit(iv)
-  iv_spread <- spread(iv, Country, colnames(iv[,3]))
-  iv_spread <- iv_spread[,-1]
-  result = pCADFtest(Y=iv_spread, criterion = "AIC", crosscorr=0.10)
-  print(result)
-}
-
-padf(va_df, "DV_VA_pc")
-padf(nfc_df, "DV_nfc_ls_pc")
-padf(hh_df, "DV_hh_ls_pc")
-padf(va_df, "IV_lending_pc")
-padf(va_df, "IV_gov_exp_pc")
-padf(va_df, "IV_trade_balance_pc")
-padf(va_df, "IV_fdi_net_pc")
-padf(nfc_df, "IV_lending_pc")
-padf(nfc_df, "IV_gov_exp_pc")
-padf(nfc_df, "IV_trade_balance_pc")
-padf(nfc_df, "IV_fdi_net_pc")
-padf(hh_df, "IV_lending_pc")
-padf(hh_df, "IV_gov_exp_pc")
-padf(hh_df, "IV_trade_balance_pc")
-padf(hh_df, "IV_fdi_net_pc")
 ```
 
 #### 3.4 test for heteroskedasticity 
