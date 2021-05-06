@@ -31,8 +31,8 @@ Read the data and drop obs prior to 1960 (this step is not necessary).
 ```{r}
 df <- read.csv("../data_processing/financialization_df.csv")
 df$X <- NULL
-# df <- df %>%
-#       filter(Year >= 1960)
+df <- df %>%
+      dplyr::filter(Year >= 1960)
 colnames(df)
 df[df==0] <- NA
 df <- df[order(df$Country, df$Year),]
