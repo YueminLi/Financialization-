@@ -52,7 +52,7 @@ The data has already been preprocessed in other documents but requires further p
 #   ungroup()
 
 temp <- df[,-1]
-temp[abs(temp)>10^9] <- NA
+temp[abs(temp)==Inf] <- NA
 df <- cbind(df[,1], temp)
 names(df)[names(df) == "df[, 1]"] <- "Country"
 
@@ -61,7 +61,7 @@ model_country <- c("Australia", "Austria", "Belgium", "Brazil", "Canada",
                    "Germany", "Greece", "Hungary", "Iceland", "Ireland",
                    "Israel","Italy", "Japan", "Korea", "Mexico",
                    "Netherlands", "New Zealand", "Norway", "Poland", "Portugal",
-                   "Spain", "Sweden", "Switzerland", "Turkey", "United Kingdom",
+                   "Spain", "Sweden", "Switzerland", "United Kingdom", #Turkey removed
                    "United States")
 df_model <- df[df$Country %in% model_country,]
 ```
@@ -471,9 +471,9 @@ lmtest::bptest(m3_ecm)
 lmtest::bgtest(m3_ecm)
 lmtest::coeftest(m3_ecm, vcov=sandwich::NeweyWest)
 
-summary(m1_pcse)
-summary(m2_pcse)
-summary(m3_pcse)
+# summary(m1_pcse)
+# summary(m2_pcse)
+# summary(m3_pcse)
 ```
 
 ```{r}

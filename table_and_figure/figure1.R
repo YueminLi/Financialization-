@@ -32,11 +32,11 @@ f1$valogic <- f1$va=="non-stationarity"
 f1$nfclogic <- f1$nfc == "non-stationarity"
 f1$hhlogic <- f1$hh == "non-stationarity"
 
-#library(ggtext)
+library(ggtext)
 
 f1 %>%
   mutate(va.label = paste0("<span style = 'color: ",
-                         ifelse(nfclogic==TRUE, "#131516", "#A8AFB3"),  # #131516 is darker, #A8AFB3 is lighter
+                         ifelse(valogic==TRUE, "#131516", "#A8AFB3"),  # #131516 is darker, #A8AFB3 is lighter
                          ";'>",
                          Country,
                          "</span>", sep = "") ,
@@ -53,7 +53,7 @@ f1 %>%
 
 f1 %>%
   mutate(nfc.label = paste0("<span style = 'color: ",
-                            ifelse(hhlogic==TRUE, "#131516", "#A8AFB3"),  # #131516 is darker, #A8AFB3 is lighter
+                            ifelse(nfclogic==TRUE, "#131516", "#A8AFB3"),  # #131516 is darker, #A8AFB3 is lighter
                            ";'>",
                            Country,
                            "</span>", sep = "") ,
@@ -72,7 +72,7 @@ f1 %>%
 
 f1 %>%
   mutate(hh.label = paste0("<span style = 'color: ",
-                           ifelse(valogic==TRUE, "#131516", "#A8AFB3"),   # #131516 is darker, #A8AFB3 is lighter
+                           ifelse(hhlogic==TRUE, "#131516", "#A8AFB3"),   # #131516 is darker, #A8AFB3 is lighter
                             ";'>",
                             Country,
                             "</span>", sep = "") ,
@@ -88,7 +88,7 @@ f1 %>%
   labs(fill = "") -> figure1c
 
 
-#library(ggpubr)
+library(ggpubr)
 ggarrange(figure1a, figure1b, figure1c, 
           #labels = c("", "", ""),
           ncol = 3, nrow = 1,

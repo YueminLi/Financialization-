@@ -225,34 +225,34 @@ modelsummary(models,
 
 ```{r echo = FALSE, rsult = 'asis'}
 # Table for ecm
-model2 <- list()
-model2[['M4: Values added']] <- m1_ecm
-model2[['M5: NFC debts']] <- m2_ecm
-model2[['M6: Household debts']] <- m3_ecm
-
-cm2 <- c("(Intercept)" = "(Intercept)",
-         'ylag1' = "Dependent variable (lag 1)",
-        'deltaIV_lending_pc' = "Government net lending",
-         "IV_lending_pcLag1" = "Government net lending (lag 1)",
-        "deltaIV_gov_exp_pc" = "Government expenditure",
-        "IV_gov_exp_pcLag1" = "Government expenditure (lag 1)",
-        "deltaIV_trade_balance_pc" = "Net trade balance",
-        "IV_trade_balance_pcLag1" = "Net trade balance (lag 1)",
-        "deltaIV_fdi_net_pc" = "FDI net outflows",
-        "IV_fdi_net_pcLag1" = "FDI net outflows (lag1)",
-        "deltaC_REER" = "Real Effect Exchange Rates",
-        "deltaC_wgdp" = "GDP",
-        "deltaC_cpi" = "CPI",
-        "deltaC_wgini" = "GINI")
-
-modelsummary(model2,
-         statistics = "Std. Error",
-         stars = TRUE,
-         coef_map = cm2,
-         fmt = 4,
-         title = "Error Correction Models, 1972-2012") %>%
-   pack_rows("Statecraft contigency", 3, 10) %>%
-   pack_rows("Development pitfall", 11,18) %>%
-   pack_rows("Control variable", 19,26) 
+# model2 <- list()
+# model2[['M4: Values added']] <- m1_ecm
+# model2[['M5: NFC debts']] <- m2_ecm
+# model2[['M6: Household debts']] <- m3_ecm
+# 
+# cm2 <- c("(Intercept)" = "(Intercept)",
+#          'ylag1' = "Dependent variable (lag 1)",
+#         'deltaIV_lending_pc' = "Government net lending",
+#          "IV_lending_pcLag1" = "Government net lending (lag 1)",
+#         "deltaIV_gov_exp_pc" = "Government expenditure",
+#         "IV_gov_exp_pcLag1" = "Government expenditure (lag 1)",
+#         "deltaIV_trade_balance_pc" = "Net trade balance",
+#         "IV_trade_balance_pcLag1" = "Net trade balance (lag 1)",
+#         "deltaIV_fdi_net_pc" = "FDI net outflows",
+#         "IV_fdi_net_pcLag1" = "FDI net outflows (lag1)",
+#         "deltaC_REER" = "Real Effect Exchange Rates",
+#         "deltaC_wgdp" = "GDP",
+#         "deltaC_cpi" = "CPI",
+#         "deltaC_wgini" = "GINI")
+# 
+# modelsummary(model2,
+#          statistics = "Std. Error",
+#          stars = TRUE,
+#          coef_map = cm2,
+#          fmt = 4,
+#          title = "Error Correction Models, 1972-2012") %>%
+#    pack_rows("Statecraft contigency", 3, 10) %>%
+#    pack_rows("Development pitfall", 11,18) %>%
+#    pack_rows("Control variable", 19,26) 
 
 ```
