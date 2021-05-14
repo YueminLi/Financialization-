@@ -9,7 +9,7 @@ f1 <- na.omit(f1)
 f1 <- f1[order(f1$Country, f1$Year),]
 
 # merge f1 with the ADF test results
-variety <- read_rds("../table_and_figure/variety.rds")
+variety <- read_rds("./table_and_figure/variety.rds")
 f1 <- merge(f1, variety, by.x = "Country", by.y = "country", all.x = T)
 
 #financialization <- (1/2-as.numeric(f1$stationarity=="non-stationarity"))*(-2)
@@ -92,7 +92,13 @@ library(ggpubr)
 ggarrange(figure1a, figure1b, figure1c, 
           #labels = c("", "", ""),
           ncol = 3, nrow = 1,
-          legend = "bottom") -> figure1
+          legend = "bottom")-> figure1
+
+annotate_figure(figure1,
+                bottom = text_grob("NOTE: Data for each country at each level have been tested in an ADF test.
+                                   A set of data is stationary if the country name is in light color",
+                                   hjust = 1, x = 1, face = "italic", size = 14),
+) -> figure1
 
 
 ggsave(
